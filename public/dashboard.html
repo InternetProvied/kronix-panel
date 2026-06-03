@@ -3,96 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kronix - Dashboard</title>
+    <title>Kronix | Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .neon-shadow { box-shadow: 0 0 15px rgba(147, 51, 234, 0.15); }
+        body { background-color: #050505; color: #e5e7eb; }
+        .glass-nav { background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid #1f1f1f; }
+        .card-bg { background: #0a0a0a; border: 1px solid #1a1a1a; }
+        .input-dark { background: #0f0f0f; border: 1px solid #262626; }
+        .input-dark:focus { border-color: #525252; outline: none; }
+        .btn-main { background: #171717; border: 1px solid #333; transition: all 0.2s; }
+        .btn-main:hover { background: #262626; border-color: #525252; }
     </style>
 </head>
-<body class="bg-[#050508] text-gray-200 min-h-screen font-sans antialiased">
+<body class="font-sans antialiased">
 
-    <nav class="bg-[#0b0b12]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 sticky top-0 z-50">
+    <!-- Nav -->
+    <nav class="glass-nav px-6 py-4 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
-            
-            <div class="flex items-center gap-8">
-                <span class="text-2xl font-black font-mono tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600">KRONIX</span>
-                
-                <div class="flex items-center gap-1 text-sm font-medium text-gray-400">
-                    <a href="/dashboard" class="bg-purple-950/30 text-purple-400 px-4 py-2 rounded-xl border border-purple-900/30 transition">Panel</a>
-                    <a href="/dashboard" class="hover:text-gray-200 px-4 py-2 transition">Statistiques</a>
-                    <a href="/dashboard" class="hover:text-gray-200 px-4 py-2 transition">Données</a>
-                    <a href="/ddos" class="hover:text-purple-400 border border-transparent hover:border-purple-950/40 hover:bg-purple-950/10 px-4 py-2 rounded-xl transition font-mono tracking-wider">DDOS</a>
-                    <a href="/plans" class="hover:text-purple-400 border border-transparent hover:border-purple-950/40 hover:bg-purple-950/10 px-4 py-2 rounded-xl transition font-mono tracking-wider">PLANS</a>
-                </div>
+            <span class="text-xl font-bold tracking-tighter text-white">KRONIX_OS</span>
+            <div class="flex gap-6 text-sm text-gray-400">
+                <a href="/dashboard" class="text-white font-medium">Panel</a>
+                <a href="/ddos" class="hover:text-gray-200 transition">Network</a>
+                <a href="/plans" class="hover:text-gray-200 transition">Upgrade</a>
             </div>
-
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <p id="user-name" class="text-sm font-bold text-white">Chargement...</p>
-                    <p id="user-status" class="text-[10px] tracking-widest font-mono text-purple-500 uppercase">Profil</p>
-                </div>
-                <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-xl border border-purple-500/20 object-cover">
-                <a href="/logout" class="bg-red-950/20 border border-red-900/30 text-red-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-red-900/40 transition">Déconnexion</a>
-            </div>
-
+            <a href="/logout" class="text-xs text-gray-500 hover:text-red-400 transition">Logout</a>
         </div>
     </nav>
 
+    <!-- Main -->
     <main class="max-w-7xl mx-auto px-6 py-12">
         <div class="mb-10">
-            <h2 class="text-xl font-bold text-white">Module de Recherche Global</h2>
-            <p class="text-gray-500 text-xs mt-1">Interroger la base de données locale en temps réel.</p>
+            <h2 class="text-2xl font-semibold text-white">Recherche Système</h2>
+            <p class="text-gray-600 text-sm">Base de données locale en ligne.</p>
         </div>
 
-        <div class="w-full bg-[#0b0b12]/50 border border-purple-950/20 rounded-2xl p-4 flex gap-3 mb-8 neon-shadow">
-            <input type="text" id="search-input" placeholder="Entrez un pseudo, email, IP ou ID Discord..." class="flex-1 bg-[#050508] border border-gray-900 focus:border-purple-600 focus:outline-none rounded-xl py-3 px-4 text-sm text-white transition placeholder-gray-800">
-            <button onclick="launchSearch()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 rounded-xl text-sm transition">Rechercher</button>
+        <div class="card-bg rounded-xl p-4 flex gap-3 shadow-2xl">
+            <input type="text" id="search-input" placeholder="Rechercher une donnée..." class="input-dark flex-1 rounded-lg py-3 px-4 text-sm text-gray-300">
+            <button onclick="launchSearch()" class="btn-main text-white px-6 rounded-lg text-sm font-medium">Lancer</button>
         </div>
 
-        <div id="results-zone" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div id="results-zone" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8"></div>
     </main>
 
     <script>
-        fetch('/api/user')
-            .then(res => res.json())
-            .then(user => {
-                document.getElementById('user-name').innerText = user.username;
-                document.getElementById('user-status').innerText = user.status;
-                if (user.avatar) document.getElementById('user-avatar').src = user.avatar;
-            })
-            .catch(() => window.location.href = '/');
-
         function launchSearch() {
-            const query = document.getElementById('search-input').value;
-            const resultsZone = document.getElementById('results-zone');
-            if(!query) return;
-
-            resultsZone.innerHTML = '<p class="text-gray-600 text-sm">Recherche en cours...</p>';
-
-            fetch(`/api/search?q=${encodeURIComponent(query)}`)
-                .then(res => res.json())
+            const q = document.getElementById('search-input').value;
+            fetch(`/api/search?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
                 .then(data => {
-                    resultsZone.innerHTML = '';
-                    if(data.length === 0) {
-                        resultsZone.innerHTML = '<p class="text-gray-500 text-sm">Aucun résultat trouvé.</p>';
-                        return;
-                    }
-                    data.forEach(item => {
-                        resultsZone.innerHTML += `
-                            <div class="bg-[#0b0b12] border border-gray-900 p-5 rounded-2xl flex items-center gap-4">
-                                <img src="${item.avatar}" class="w-12 h-12 rounded-xl object-cover border border-purple-950/40">
-                                <div>
-                                    <h3 class="text-white font-bold text-base">${item.username}</h3>
-                                    <p class="text-xs text-purple-400 font-mono mt-0.5">${item.status}</p>
-                                    <div class="text-[11px] text-gray-500 font-mono mt-2 space-y-0.5">
-                                        <p><span class="text-gray-600">Email:</span> ${item.email}</p>
-                                        <p><span class="text-gray-600">Discord ID:</span> ${item.discordId}</p>
-                                        <p><span class="text-gray-600">IP:</span> ${item.ipAddress}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
+                    const z = document.getElementById('results-zone');
+                    z.innerHTML = data.map(i => `
+                        <div class="card-bg p-5 rounded-xl hover:border-gray-700 transition">
+                            <h3 class="text-white font-medium">${i.username}</h3>
+                            <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest font-mono">${i.status}</p>
+                        </div>`).join('');
                 });
         }
     </script>
