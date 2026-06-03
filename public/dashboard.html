@@ -2,63 +2,41 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kronix | Dashboard</title>
+    <title>Kronix | Professional Core</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #050505; color: #e5e7eb; }
-        .glass-nav { background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid #1f1f1f; }
-        .card-bg { background: #0a0a0a; border: 1px solid #1a1a1a; }
-        .input-dark { background: #0f0f0f; border: 1px solid #262626; }
-        .input-dark:focus { border-color: #525252; outline: none; }
-        .btn-main { background: #171717; border: 1px solid #333; transition: all 0.2s; }
-        .btn-main:hover { background: #262626; border-color: #525252; }
+        body { background: #030303; color: #a3a3a3; }
+        .card { background: #0a0a0a; border: 1px solid #171717; }
+        .gradient-text { background: linear-gradient(to right, #fff, #666); -webkit-background-clip: text; color: transparent; }
     </style>
 </head>
-<body class="font-sans antialiased">
+<body class="p-6">
+    <!-- Stats Row -->
+    <div class="max-w-6xl mx-auto grid grid-cols-3 gap-4 mb-8">
+        <div class="card p-4 rounded-xl">
+            <p class="text-[10px] uppercase tracking-widest text-gray-600">Recherches Totales</p>
+            <h3 class="text-2xl font-bold text-white">1,284</h3>
+        </div>
+        <div class="card p-4 rounded-xl">
+            <p class="text-[10px] uppercase tracking-widest text-gray-600">Balance Actuelle</p>
+            <h3 class="text-2xl font-bold text-white">€450.00</h3>
+        </div>
+        <div class="card p-4 rounded-xl">
+            <p class="text-[10px] uppercase tracking-widest text-gray-600">Status Serveur</p>
+            <h3 class="text-2xl font-bold text-green-500">ONLINE</h3>
+        </div>
+    </div>
 
-    <!-- Nav -->
-    <nav class="glass-nav px-6 py-4 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <span class="text-xl font-bold tracking-tighter text-white">KRONIX_OS</span>
-            <div class="flex gap-6 text-sm text-gray-400">
-                <a href="/dashboard" class="text-white font-medium">Panel</a>
-                <a href="/ddos" class="hover:text-gray-200 transition">Network</a>
-                <a href="/plans" class="hover:text-gray-200 transition">Upgrade</a>
+    <!-- Search Section -->
+    <main class="max-w-6xl mx-auto">
+        <div class="card p-6 rounded-2xl mb-8">
+            <h2 class="text-lg font-bold text-white mb-4">Module de Recherche</h2>
+            <div class="flex gap-2">
+                <input id="search-input" placeholder="ID, IP ou Username..." class="flex-1 bg-[#050505] border border-[#171717] px-4 py-3 rounded-lg text-sm text-white">
+                <button onclick="launchSearch()" class="bg-white text-black px-6 py-3 rounded-lg text-sm font-bold hover:bg-gray-200">Rechercher</button>
             </div>
-            <a href="/logout" class="text-xs text-gray-500 hover:text-red-400 transition">Logout</a>
         </div>
-    </nav>
-
-    <!-- Main -->
-    <main class="max-w-7xl mx-auto px-6 py-12">
-        <div class="mb-10">
-            <h2 class="text-2xl font-semibold text-white">Recherche Système</h2>
-            <p class="text-gray-600 text-sm">Base de données locale en ligne.</p>
-        </div>
-
-        <div class="card-bg rounded-xl p-4 flex gap-3 shadow-2xl">
-            <input type="text" id="search-input" placeholder="Rechercher une donnée..." class="input-dark flex-1 rounded-lg py-3 px-4 text-sm text-gray-300">
-            <button onclick="launchSearch()" class="btn-main text-white px-6 rounded-lg text-sm font-medium">Lancer</button>
-        </div>
-
-        <div id="results-zone" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8"></div>
+        <div id="results-zone" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </main>
-
-    <script>
-        function launchSearch() {
-            const q = document.getElementById('search-input').value;
-            fetch(`/api/search?q=${encodeURIComponent(q)}`)
-                .then(r => r.json())
-                .then(data => {
-                    const z = document.getElementById('results-zone');
-                    z.innerHTML = data.map(i => `
-                        <div class="card-bg p-5 rounded-xl hover:border-gray-700 transition">
-                            <h3 class="text-white font-medium">${i.username}</h3>
-                            <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest font-mono">${i.status}</p>
-                        </div>`).join('');
-                });
-        }
-    </script>
 </body>
 </html>
