@@ -11,13 +11,14 @@ const PORT = process.env.PORT || 3000;
 // ==========================================
 // 1. BASE DE DONNÉES LOCALE (TABLEAU JS)
 // ==========================================
-// Les comptes créés s'enregistreront ici en temps réel
+// Les comptes créés s'enregistreront ici en temps réel.
+// Attention : si le serveur gratuit de Render s'endort, ce tableau se réinitialise.
 const localUsersDB = [
     {
         _id: "user_admin_kronix",
         username: "Admin",
         email: "admin@kronix.local",
-        password: "admin", // Ton mot de passe par défaut pour te connecter sur /
+        password: "admin", // Ton mot de passe par défaut pour te connecter
         discordId: "000000000000000000",
         ipAddress: "127.0.0.1",
         avatar: "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=100&h=100&q=80",
@@ -55,11 +56,9 @@ passport.use(new DiscordStrategy({
     callbackURL: 'http://localhost:3000/auth/discord/callback',
     scope: ['identify', 'email']
 }, (accessToken, refreshToken, profile, done) => {
-    // On cherche si le compte Discord existe déjà dans notre tableau
     let user = localUsersDB.find(u => u.discordId === profile.id);
     
     if (!user) {
-        // S'il n'existe pas, on le crée et on l'ajoute au tableau
         user = {
             _id: "user_" + Date.now(),
             username: profile.username,
@@ -82,8 +81,6 @@ passport.use(new GoogleStrategy({
     callbackURL: 'http://localhost:3000/auth/google/callback'
 }, (token, tokenSecret, profile, done) => {
     const emailStr = profile.emails && profile.emails[0] ? profile.emails[0].value : 'Non renseigné';
-    
-    // On cherche si l'adresse email existe déjà
     let user = localUsersDB.find(u => u.email === emailStr);
     
     if (!user) {
@@ -113,26 +110,57 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Traitement de la connexion par formulaire classique
+// Traitement de la connexion classique
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    
-    // On cherche dans notre tableau local de comptes
     const user = localUsersDB.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     
     if (!user) {
-        return res.send('<script>alert("Identifiants incorrects (Admin / admin)"); window.location.href="/";</script>');
+        return res.send('<script>alert("Identifiants incorrects."); window.location.href="/";</script>');
     }
     
     req.session.user = user;
     res.redirect('/dashboard');
 });
 
-// Liens de redirection vers les API tierces
+// Traitement de la création de compte (Inscription)
+app.post('/register', (req, res) => {
+    const { username, email, password } = req.body;
+
+    // On vérifie si le nom d'utilisateur ou l'email existe déjà
+    const userExists = localUsersDB.find(u => 
+        u.username.toLowerCase() === username.toLowerCase() || 
+        u.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (userExists) {
+        return res.send('<script>alert("Ce nom d\'utilisateur ou cet email est déjà utilisé."); window.location.href="/";</script>');
+    }
+
+    // Création du nouvel utilisateur
+    const newUser = {
+        _id: "user_" + Date.now(),
+        username: username,
+        email: email || 'Non renseigné',
+        password: password, 
+        discordId: 'N/A',
+        ipAddress: req.ip || '127.0.0.1',
+        avatar: "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=100&h=100&q=80",
+        status: "Membre"
+    };
+
+    localUsersDB.push(newUser);
+    console.log(`✨ Nouveau compte créé via le panel : ${newUser.username}`);
+
+    // Connexion auto après inscription
+    req.session.user = newUser;
+    res.send('<script>alert("Compte créé avec succès !"); window.location.href="/dashboard";</script>');
+});
+
+// Redirections API Oauth2
 app.get('/auth/discord', passport.authenticate('discord'));
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-// Retours d'authentification (Callbacks)
 app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
     req.session.user = req.user;
     res.redirect('/dashboard');
@@ -143,7 +171,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
     res.redirect('/dashboard');
 });
 
-// Récupération des infos de session actuelle pour l'affichage du Dashboard
+// Infos de session pour le Dashboard
 app.get('/api/user', (req, res) => {
     if (!req.session || !req.session.user) return res.status(401).json({ error: 'Non authentifié' });
     res.json(req.session.user);
@@ -161,7 +189,7 @@ app.get('/dashboard', (req, res) => {
 });
 
 // ==========================================
-// 5. L'API DE RECHERCHE DANS NOTRE BASE DE COMPTES (OSINT)
+// 5. L'API DE RECHERCHE (OSINT)
 // ==========================================
 app.get('/api/search', (req, res) => {
     if (!req.session || !req.session.user) return res.status(401).json({ error: 'Accès refusé.' });
@@ -171,7 +199,6 @@ app.get('/api/search', (req, res) => {
 
     const lowerQuery = query.toLowerCase();
 
-    // On filtre directement le tableau JS pour trouver les correspondances
     const results = localUsersDB.filter(user => {
         return (
             (user.username && user.username.toLowerCase().includes(lowerQuery)) ||
@@ -180,7 +207,6 @@ app.get('/api/search', (req, res) => {
             (user.ipAddress && user.ipAddress.toLowerCase().includes(lowerQuery))
         );
     }).map(user => {
-        // On clone l'objet pour retirer le mot de passe avant d'envoyer la réponse au navigateur
         const { password, ...safeUser } = user;
         return safeUser;
     });
@@ -188,7 +214,6 @@ app.get('/api/search', (req, res) => {
     res.json(results);
 });
 
-// Lancement du serveur
 app.listen(PORT, () => {
     console.log(`🚀 Serveur Kronix en ligne sur : http://localhost:${PORT}`);
     console.log(`🔹 Mode base de données locale active (Sans MongoDB).`);
