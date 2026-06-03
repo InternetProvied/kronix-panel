@@ -1,32 +1,201 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kronix | Subs</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { background: #030303; color: #a3a3a3; }</style>
+    <style>
+        body {
+            background-color: #030712;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        .cyber-glow {
+            position: absolute;
+            width: 700px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(76, 29, 149, 0.05) 50%, rgba(0,0,0,0) 100%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .glow-1 { top: 15%; left: 50%; transform: translate(-50%, -50%); }
+        .glow-2 { top: 70%; left: 50%; transform: translate(-50%, -50%); }
+        .main-container { position: relative; z-index: 10; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #2e1065; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4c1d95; }
+    </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-    <div class="max-w-4xl w-full grid grid-cols-3 gap-6 p-6">
-        <!-- Card 1 -->
-        <div class="border border-[#171717] p-8 rounded-2xl bg-[#0a0a0a]">
-            <h2 class="text-white font-bold">BASIC</h2>
-            <p class="text-3xl font-bold text-white my-4">€15<span class="text-sm font-normal text-gray-600">/mo</span></p>
-            <ul class="text-sm space-y-2 mb-6"><li>✓ Accès Limité</li><li>✓ Support Email</li></ul>
-            <button class="w-full py-2 bg-white text-black rounded-lg text-xs font-bold">CHOISIR</button>
+<body class="text-violet-200 font-sans antialiased selection:bg-violet-500/30">
+
+    <div class="cyber-glow glow-1"></div>
+    <div class="cyber-glow glow-2"></div>
+
+    <canvas id="canvas-particles" class="fixed top-0 left-0 w-full h-full pointer-events-none" style="z-index: 2;"></canvas>
+
+    <section class="min-h-screen flex flex-col justify-between p-6 main-container">
+        
+        <nav class="w-full max-w-4xl mx-auto bg-slate-950/60 backdrop-blur-xl border border-violet-900/40 rounded-full px-6 py-3 flex justify-between items-center shadow-2xl mt-2">
+            <div class="flex items-center gap-2 font-mono text-xs font-black tracking-widest text-violet-400">
+                <span class="inline-block w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span> KRONIX//PANEL
+            </div>
+            <div class="hidden sm:flex items-center gap-6 text-xs text-violet-300 font-medium font-mono">
+                <a href="/dashboard" class="hover:text-white transition">CONSOLE</a>
+                <a href="/ddos" class="hover:text-white transition">STRESSER</a>
+                <a href="/plans" class="text-white border-b border-violet-500 pb-0.5">SUBS</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 bg-slate-900/80 border border-violet-900/30 py-1 px-3 rounded-full">
+                    <img id="user-avatar" src="" alt="Avatar" class="w-4 h-4 rounded-full border border-violet-500 hidden">
+                    <span id="user-nav-name" class="text-[11px] font-mono font-medium text-violet-300">Loading...</span>
+                </div>
+                <a href="/logout" class="text-violet-500 hover:text-rose-400 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 01-3-3h4a3 3 0 013 3v1"></path></svg>
+                </a>
+            </div>
+        </nav>
+
+        <div class="w-full max-w-4xl mx-auto my-auto pt-12 mb-6">
+            <div class="text-center mb-10">
+                <h2 class="text-2xl font-bold text-white mb-2">Abonnements Système 💸</h2>
+                <p class="text-xs text-slate-400 font-mono">> Choisissez votre niveau d'accès aux infrastructures Kronix.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div class="bg-slate-950/40 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 flex flex-col justify-between shadow-xl transition hover:border-violet-900/60 duration-300">
+                    <div>
+                        <div class="text-xs font-mono text-violet-400 uppercase tracking-widest mb-1">STARTER</div>
+                        <div class="text-2xl font-bold text-white mb-4">9.99€ <span class="text-xs text-slate-500 font-normal">/ mois</span></div>
+                        <ul class="space-y-2 text-xs text-slate-400 font-mono">
+                            <li class="flex items-center gap-2 text-slate-300"><span class="text-emerald-500">✔</span> Méthodes Layer 4 (UDP)</li>
+                            <li class="flex items-center gap-2 text-slate-300"><span class="text-emerald-500">✔</span> Temps max : 60s</li>
+                            <li class="flex items-center gap-2 text-slate-300"><span class="text-emerald-500">✔</span> 1 concurrent simultané</li>
+                            <li class="flex items-center gap-2 text-slate-600">❌ Recherche OSINT Avancée</li>
+                        </ul>
+                    </div>
+                    <button class="w-full mt-6 bg-slate-900/80 hover:bg-violet-950/40 border border-violet-950 hover:border-violet-700 text-slate-300 font-medium py-2 rounded-xl text-xs transition font-mono">CHOISIR_PLAN</button>
+                </div>
+
+                <div class="bg-slate-950/80 backdrop-blur-xl border-2 border-violet-600 rounded-2xl p-6 flex flex-col justify-between shadow-2xl relative transform scale-105 z-20">
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-violet-600 text-white font-mono text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">POPULAIRE</div>
+                    <div>
+                        <div class="text-xs font-mono text-violet-400 uppercase tracking-widest mb-1">PREMIUM</div>
+                        <div class="text-2xl font-bold text-white mb-4">24.99€ <span class="text-xs text-slate-500 font-normal">/ mois</span></div>
+                        <ul class="space-y-2 text-xs text-slate-400 font-mono">
+                            <li class="flex items-center gap-2 text-slate-200"><span class="text-emerald-500">✔</span> Méthodes Layer 4 & Layer 7</li>
+                            <li class="flex items-center gap-2 text-slate-200"><span class="text-emerald-500">✔</span> Temps max : 180s</li>
+                            <li class="flex items-center gap-2 text-slate-200"><span class="text-emerald-500">✔</span> 2 concurrents simultanés</li>
+                            <li class="flex items-center gap-2 text-slate-200"><span class="text-emerald-500">✔</span> Accès complet BDD OSINT</li>
+                        </ul>
+                    </div>
+                    <button class="w-full mt-6 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 rounded-xl text-xs transition font-mono shadow-lg shadow-violet-600/20">UPGRADE_NOW</button>
+                </div>
+
+                <div class="bg-slate-950/40 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 flex flex-col justify-between shadow-xl transition hover:border-violet-900/60 duration-300">
+                    <div>
+                        <div class="text-xs font-mono text-violet-400 uppercase tracking-widest mb-1">VIP INFINE</div>
+                        <div class="text-2xl font-bold text-white mb-4">49.99€ <span class="text-xs text-slate-500 font-normal">/ à vie</span></div>
+                        <ul class="space-y-2 text-xs text-slate-400 font-mono">
+                            <li class="flex items-center gap-2 text-slate-300"><span class="text-emerald-500">✔</span> Toutes les méthodes (VIP incluses)</li>
+                            <li class="flex items-center gap-2 text-slate-300"><span class="text-emerald-500">✔</span> Temps max : 600s</li>
+                            <li class="flex items-center gap-2 text-slate-300"><span class="text-emerald-500">✔</span> 4 concurrents simultanés</li>
+                            <li class="flex items-center gap-2 text-slate-300"><span class="text-emerald-500">✔</span> Support prioritaire 24/7</li>
+                        </ul>
+                    </div>
+                    <button class="w-full mt-6 bg-slate-900/80 hover:bg-violet-950/40 border border-violet-950 hover:border-violet-700 text-slate-300 font-medium py-2 rounded-xl text-xs transition font-mono">CHOISIR_PLAN</button>
+                </div>
+
+            </div>
         </div>
-        <!-- Card 2 (Highlight) -->
-        <div class="border border-white p-8 rounded-2xl bg-white text-black">
-            <h2 class="font-bold">PRO</h2>
-            <p class="text-3xl font-bold my-4">€45<span class="text-sm font-normal text-gray-800">/mo</span></p>
-            <ul class="text-sm space-y-2 mb-6"><li>✓ Accès Illimité</li><li>✓ OSINT Avancé</li><li>✓ Priorité</li></ul>
-            <button class="w-full py-2 bg-black text-white rounded-lg text-xs font-bold">CHOISIR</button>
+
+        <div class="w-full max-w-4xl mx-auto flex justify-between items-center text-[11px] text-slate-500 font-mono mt-4">
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Passerelle de paiement sécurisée
+            </div>
+            <div class="text-violet-400 font-bold uppercase tracking-wider">KRONIX PLATFORM</div>
         </div>
-        <!-- Card 3 -->
-        <div class="border border-[#171717] p-8 rounded-2xl bg-[#0a0a0a]">
-            <h2 class="text-white font-bold">ELITE</h2>
-            <p class="text-3xl font-bold text-white my-4">€99<span class="text-sm font-normal text-gray-600">/mo</span></p>
-            <ul class="text-sm space-y-2 mb-6"><li>✓ API Accès</li><li>✓ Support 24/7</li><li>✓ Expert Tools</li></ul>
-            <button class="w-full py-2 bg-white text-black rounded-lg text-xs font-bold">CHOISIR</button>
-        </div>
-    </div>
+    </section>
+
+    <script>
+        // Charger la session de l'utilisateur
+        async function loadUser() {
+            try {
+                const response = await fetch('/api/user');
+                if (!response.ok) return window.location.href = '/';
+                const user = await response.json();
+                if (user) {
+                    document.getElementById('user-nav-name').innerText = user.username;
+                    if (user.avatar) {
+                        const avatarImg = document.getElementById('user-avatar');
+                        avatarImg.src = user.avatar;
+                        avatarImg.classList.remove('hidden');
+                    }
+                }
+            } catch (err) { window.location.href = '/'; }
+        }
+        loadUser();
+
+        // Moteur de particules fluide
+        const canvas = document.getElementById('canvas-particles');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+        const mouse = { x: null, y: null, radius: 100 };
+
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 1;
+                this.baseX = this.x; this.baseY = this.y;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.density = (Math.random() * 10) + 10;
+            }
+            draw() {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(167, 139, 250, 0.2)'; ctx.fill();
+            }
+            update() {
+                this.baseX += this.vx; this.baseY += this.vy;
+                if (this.baseX < 0 || this.baseX > canvas.width) this.vx = -this.vx;
+                if (this.baseY < 0 || this.baseY > canvas.height) this.vy = -this.vy;
+                
+                let dx = mouse.x - this.x; let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (mouse.x !== null && distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    this.x += (dx / distance) * force * this.density * 0.2;
+                    this.y += (dy / distance) * force * this.density * 0.2;
+                } else {
+                    this.x += (this.baseX - this.x) / 10;
+                    this.y += (this.baseY - this.y) / 10;
+                }
+            }
+        }
+        function init() {
+            particlesArray = [];
+            for (let i = 0; i < 50; i++) particlesArray.push(new Particle());
+        }
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update(); particlesArray[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+        init(); animate();
+    </script>
 </body>
 </html>
