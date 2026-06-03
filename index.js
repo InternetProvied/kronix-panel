@@ -85,8 +85,8 @@ passport.deserializeUser(async (id, done) => {
 // CONFIGURATION DES STRATÉGIES PASSPORT
 // ==========================================
 passport.use(new DiscordStrategy({
-    clientID: 'TON_DISCORD_CLIENT_ID', 
-    clientSecret: 'TON_DISCORD_CLIENT_SECRET',
+    clientID: '1510598479817347113', 
+    clientSecret: 'rlFVyaBMEw34lMof9mPtWeBDg0Ff_vGl',
     callbackURL: 'http://localhost:3000/auth/discord/callback',
     scope: ['identify', 'email']
 }, async (accessToken, refreshToken, profile, done) => {
