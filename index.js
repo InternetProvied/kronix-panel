@@ -7,7 +7,8 @@ const DiscordStrategy = require('passport-discord').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Render définit automatiquement le PORT, sinon on prend 3000 en local
+const PORT = process.env.PORT || 3000; 
 
 // ==========================================
 // CONNECTER MONGODB ATLAS WITH YOUR CREDENTIALS
@@ -17,14 +18,13 @@ const MONGODB_URI = 'mongodb+srv://kronix_admin:tuXipYz..UVS7Y-@cluster0.yq31hua
 mongoose.connect(MONGODB_URI)
     .then(async () => {
         console.log('✅ Connecté avec succès à MongoDB Atlas !');
-        // Création automatique du compte Admin s'il n'existe pas déjà
         try {
             const adminExists = await User.findOne({ username: 'Admin' });
             if (!adminExists) {
                 const defaultAdmin = new User({
                     username: 'Admin',
                     email: 'admin@kronix.local',
-                    password: 'admin', // Ton mot de passe par défaut
+                    password: 'admin', 
                     discordId: '000000000000000000',
                     ipAddress: '127.0.0.1',
                     avatar: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=100&h=100&q=80',
@@ -82,12 +82,12 @@ passport.deserializeUser(async (id, done) => {
 });
 
 // ==========================================
-// CONFIGURATION DES STRATÉGIES PASSPORT
+// CONFIGURATION DES STRATÉGIES PASSPORT (SÉCURISÉES VIA RENDER)
 // ==========================================
 passport.use(new DiscordStrategy({
-    clientID: '1510598479817347113', 
-    clientSecret: 'rlFVyaBMEw34lMof9mPtWeBDg0Ff_vGl',
-    callbackURL: 'http://localhost:3000/auth/discord/callback',
+    clientID: process.env.DISCORD_CLIENT_ID, 
+    clientSecret: process.env.DISCORD_CLIENT_SECRET,
+    callbackURL: 'https://kronix-panel.onrender.com/auth/discord/callback',
     scope: ['identify', 'email']
 }, async (accessToken, refreshToken, profile, done) => {
     try {
@@ -111,9 +111,9 @@ passport.use(new DiscordStrategy({
 }));
 
 passport.use(new GoogleStrategy({
-    clientID: 'TON_GOOGLE_CLIENT_ID', 
-    clientSecret: 'TON_GOOGLE_CLIENT_SECRET',
-    callbackURL: 'http://localhost:3000/auth/google/callback'
+    clientID: process.env.GOOGLE_CLIENT_ID, 
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: 'https://kronix-panel.onrender.com/auth/google/callback'
 }, async (token, tokenSecret, profile, done) => {
     try {
         const emailStr = profile.emails && profile.emails[0] ? profile.emails[0].value : 'Non renseigné';
@@ -226,6 +226,6 @@ app.get('/api/search', async (req, res) => {
 
 // Lancement
 app.listen(PORT, () => {
-    console.log(`🚀 Serveur Kronix en ligne sur : http://localhost:${PORT}`);
+    console.log(`🚀 Serveur Kronix en ligne sur le port : ${PORT}`);
     console.log(`🔹 Base de données MongoDB Atlas activée via Mongoose.`);
 });
