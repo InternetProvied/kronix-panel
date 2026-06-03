@@ -2,41 +2,61 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Kronix | Professional Core</title>
+    <title>OathNet - Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #030303; color: #a3a3a3; }
-        .card { background: #0a0a0a; border: 1px solid #171717; }
-        .gradient-text { background: linear-gradient(to right, #fff, #666); -webkit-background-clip: text; color: transparent; }
+        /* Fond style image_9548a7.jpg */
+        body { 
+            background: radial-gradient(circle at center, #2e1065 0%, #050508 70%); 
+            min-height: 100vh;
+            color: white;
+        }
+        .glass-nav { 
+            background: rgba(15, 15, 25, 0.4); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+        .search-box { 
+            background: rgba(10, 10, 20, 0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+        .glow-icon { filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.5)); }
     </style>
 </head>
-<body class="p-6">
-    <!-- Stats Row -->
-    <div class="max-w-6xl mx-auto grid grid-cols-3 gap-4 mb-8">
-        <div class="card p-4 rounded-xl">
-            <p class="text-[10px] uppercase tracking-widest text-gray-600">Recherches Totales</p>
-            <h3 class="text-2xl font-bold text-white">1,284</h3>
-        </div>
-        <div class="card p-4 rounded-xl">
-            <p class="text-[10px] uppercase tracking-widest text-gray-600">Balance Actuelle</p>
-            <h3 class="text-2xl font-bold text-white">€450.00</h3>
-        </div>
-        <div class="card p-4 rounded-xl">
-            <p class="text-[10px] uppercase tracking-widest text-gray-600">Status Serveur</p>
-            <h3 class="text-2xl font-bold text-green-500">ONLINE</h3>
-        </div>
-    </div>
+<body>
 
-    <!-- Search Section -->
-    <main class="max-w-6xl mx-auto">
-        <div class="card p-6 rounded-2xl mb-8">
-            <h2 class="text-lg font-bold text-white mb-4">Module de Recherche</h2>
-            <div class="flex gap-2">
-                <input id="search-input" placeholder="ID, IP ou Username..." class="flex-1 bg-[#050505] border border-[#171717] px-4 py-3 rounded-lg text-sm text-white">
-                <button onclick="launchSearch()" class="bg-white text-black px-6 py-3 rounded-lg text-sm font-bold hover:bg-gray-200">Rechercher</button>
-            </div>
+    <!-- Barre de navigation -->
+    <nav class="glass-nav m-4 rounded-full px-6 py-3 flex items-center justify-between max-w-5xl mx-auto">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center glow-icon">🛡️</div>
+            <span class="font-bold tracking-tight text-lg">OathNet</span>
         </div>
-        <div id="results-zone" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div class="flex gap-6 text-sm font-medium text-gray-300">
+            <a href="#" class="text-white">Home</a>
+            <a href="/plans" class="hover:text-purple-400 transition">Pricing</a>
+            <a href="#" class="hover:text-purple-400 transition">API</a>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">M</div>
+            <div class="w-4 h-4 cursor-pointer">→</div>
+        </div>
+    </nav>
+
+    <!-- Zone Centrale (Logo + Search) -->
+    <main class="flex flex-col items-center justify-center pt-20">
+        <!-- Logo central -->
+        <div class="w-24 h-24 rounded-full border border-purple-500/30 flex items-center justify-center mb-12 animate-pulse glow-icon">
+            <div class="text-3xl">🛡️</div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-box w-full max-w-2xl rounded-2xl p-2 flex items-center">
+            <span class="px-4 text-gray-500">🔍</span>
+            <input type="text" placeholder="e.g. domain: example.org" class="flex-1 bg-transparent py-3 outline-none text-sm">
+            <button class="bg-white text-black px-6 py-2 rounded-xl text-sm font-bold hover:bg-gray-200 transition">Search →</button>
+        </div>
     </main>
+
 </body>
 </html>
