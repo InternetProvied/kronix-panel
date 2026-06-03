@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kronix | Dashboard</title>
+    <title>Kronix Central | Threat Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -12,12 +12,12 @@
             overflow-x: hidden;
             scroll-behavior: smooth;
         }
-        /* Ton effet de lueur violette d'origine */
+        /* Effet de lueur sombre style nébuleuse grise/blanche sans violet */
         .cyber-glow {
             position: absolute;
             width: 700px;
             height: 350px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(76, 29, 149, 0.05) 50%, rgba(0,0,0,0) 100%);
+            background: radial-gradient(circle, rgba(148, 163, 184, 0.08) 0%, rgba(30, 41, 59, 0.03) 50%, rgba(0,0,0,0) 100%);
             filter: blur(60px);
             pointer-events: none;
             z-index: 1;
@@ -26,13 +26,14 @@
         .glow-2 { top: 70%; left: 50%; transform: translate(-50%, -50%); }
         .main-container { position: relative; z-index: 10; }
         
+        /* Personnalisation de la scrollbar pour le côté pro */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #030712; }
-        ::-webkit-scrollbar-thumb { background: #2e1065; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4c1d95; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
     </style>
 </head>
-<body class="text-violet-200 font-sans antialiased selection:bg-violet-500/30">
+<body class="text-slate-200 font-sans antialiased selection:bg-slate-700/50">
 
     <div class="cyber-glow glow-1"></div>
     <div class="cyber-glow glow-2"></div>
@@ -41,29 +42,270 @@
 
     <section class="min-h-screen flex flex-col justify-between p-6 main-container">
         
-        <nav class="w-full max-w-4xl mx-auto bg-slate-950/60 backdrop-blur-xl border border-violet-900/40 rounded-full px-6 py-3 flex justify-between items-center shadow-2xl mt-2">
-            <div class="flex items-center gap-2 font-mono text-xs font-black tracking-widest text-violet-400">
-                <span class="inline-block w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span> KRONIX//PANEL
+        <nav class="w-full max-w-4xl mx-auto bg-slate-950/60 backdrop-blur-xl border border-slate-800/80 rounded-full px-6 py-3 flex justify-between items-center shadow-2xl mt-2">
+            <div class="flex items-center gap-2 font-mono text-xs font-black tracking-widest text-slate-400">
+                <span class="inline-block w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> KRONIX//CORE
             </div>
-            <div class="hidden sm:flex items-center gap-6 text-xs text-violet-300 font-medium font-mono">
-                <a href="/dashboard" class="text-white border-b border-violet-500 pb-0.5">CONSOLE</a>
+            <div class="hidden sm:flex items-center gap-6 text-xs text-slate-400 font-medium font-mono">
+                <a href="/dashboard" class="text-white border-b border-slate-400 pb-0.5">CONSOLE</a>
                 <a href="/ddos" class="hover:text-white transition">STRESSER</a>
                 <a href="/plans" class="hover:text-white transition">SUBS</a>
+                <a href="#stats-section" class="hover:text-white transition">ANALYTICS</a>
             </div>
             <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2 bg-slate-900/80 border border-violet-900/30 py-1 px-3 rounded-full">
-                    <img id="user-avatar" src="" alt="Avatar" class="w-4 h-4 rounded-full border border-violet-500 hidden">
-                    <span id="user-nav-name" class="text-[11px] font-mono font-medium text-violet-300">Loading...</span>
+                <div class="flex items-center gap-2 bg-slate-900/80 border border-slate-800/60 py-1 px-3 rounded-full">
+                    <img id="user-avatar" src="" alt="Avatar" class="w-4 h-4 rounded-full border border-slate-600 hidden">
+                    <span id="user-nav-name" class="text-[11px] font-mono font-medium text-slate-300">Loading...</span>
                 </div>
-                <a href="/logout" class="text-violet-500 hover:text-rose-400 transition">
+                <a href="/logout" class="text-slate-500 hover:text-rose-400 transition" title="Déconnexion">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 01-3-3h4a3 3 0 013 3v1"></path></svg>
                 </a>
             </div>
         </nav>
 
         <div class="flex flex-col items-center justify-center my-auto relative pt-12">
-            <div class="w-full max-w-3xl bg-slate-950/40 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 text-left shadow-2xl">
-                <h2 class="text-xl font-bold text-white font-sans flex items-center gap-2">
-                    Bienvenue sur le panel, <span id="user-welcome-name" class="text-violet-400">Admin</span> 👋
+            <div class="w-full max-w-2xl bg-slate-950/40 backdrop-blur-xl border border-slate-900 rounded-2xl p-6 text-left shadow-2xl">
+                <h2 class="text-lg font-bold text-slate-100 font-mono flex items-center gap-2">
+                    > Identity initialized: <span id="user-welcome-name" class="text-slate-300">...</span>
                 </h2>
-                <p class="text-xs text-slate-400 leading-relaxed border-b
+                <p class="text-xs text-slate-400 leading-relaxed border-b border-slate-900/60 pb-4 mb-4 mt-1 font-sans">
+                    Session synchronisée. Terminal d'interrogation de bases de données locales et d'analyses de cibles opérationnel.
+                </p>
+                <div class="flex gap-6 text-[10px] font-mono text-slate-500">
+                    <div>UID: <span id="user-id" class="text-slate-400">...</span></div>
+                    <div>AUTH_NODE: <span id="user-email" class="text-slate-400">...</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full max-w-3xl mx-auto bg-slate-950/20 backdrop-blur-xl border border-slate-900 rounded-2xl p-5 shadow-2xl mb-6">
+            <div class="flex items-center gap-3 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 mb-3 focus-within:border-slate-700 transition duration-300">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="search-input" placeholder="Entrez un pseudo, un email, un discord ID ou une IP..." class="bg-transparent text-sm text-slate-300 w-full focus:outline-none placeholder-slate-700 font-mono">
+                <button onclick="performSearch()" class="bg-slate-800 hover:bg-slate-100 border border-slate-700 hover:border-white text-slate-300 hover:text-black px-5 py-2 rounded-lg text-xs font-bold font-mono transition duration-200">
+                    SEARCH_
+                </button>
+            </div>
+
+            <div id="search-results" class="hidden mt-4 border-t border-slate-900 pt-4 font-mono text-xs">
+                <div class="flex items-center justify-between text-slate-500 mb-3">
+                    <span>DATABASE_QUERY_RESULT</span>
+                    <span id="results-count" class="text-slate-400">0 found</span>
+                </div>
+                <div id="results-container" class="space-y-3 max-h-64 overflow-y-auto pr-2"></div>
+            </div>
+
+            <div class="flex flex-wrap justify-between items-center gap-3 text-[10px] text-slate-500 font-mono px-1 mt-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Volatile Storage Sync Active
+                </div>
+                <div class="text-slate-400 uppercase tracking-wider">SYSTEM: READY</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="stats-section" class="py-20 px-6 max-w-5xl mx-auto main-container">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+            <div>
+                <span class="text-[10px] font-bold text-slate-500 tracking-widest uppercase font-mono block mb-1">Index Metrics</span>
+                <h2 class="text-2xl font-black font-mono tracking-tight mb-3 text-slate-200">> ANALYTICS</h2>
+                <p class="text-slate-400 text-xs leading-relaxed">Flux d'activité globale du cœur système. Statistiques de requêtes générées en temps réel.</p>
+            </div>
+            <div class="lg:col-span-2 flex flex-col gap-4">
+                <div class="grid grid-cols-3 gap-4 font-mono">
+                    <div class="bg-slate-950/40 border border-slate-900 p-4 rounded-xl">
+                        <div class="text-lg font-bold text-slate-200">136.4K</div>
+                        <div class="text-[9px] text-slate-500 uppercase tracking-wider mt-0.5">INDEXED_ITEMS</div>
+                    </div>
+                    <div class="bg-slate-950/40 border border-slate-900 p-4 rounded-xl">
+                        <div class="text-lg font-bold text-slate-200">12.8B</div>
+                        <div class="text-[9px] text-slate-500 uppercase tracking-wider mt-0.5">TOTAL_QUERIES</div>
+                    </div>
+                    <div class="bg-slate-950/40 border border-slate-900 p-4 rounded-xl">
+                        <div class="text-lg font-bold text-slate-300">+198.7M</div>
+                        <div class="text-[9px] text-slate-500 uppercase tracking-wider mt-0.5">LOAD_SPEED</div>
+                    </div>
+                </div>
+                <div class="bg-slate-950/40 border border-slate-900 p-4 rounded-xl h-56">
+                    <div class="w-full h-full">
+                        <canvas id="neonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // 1. Session utilisateur
+        async function loadUser() {
+            try {
+                const response = await fetch('/api/user');
+                if (!response.ok) return window.location.href = '/';
+                const user = await response.json();
+                
+                if (user) {
+                    document.getElementById('user-nav-name').innerText = user.username.toUpperCase();
+                    document.getElementById('user-welcome-name').innerText = user.username;
+                    document.getElementById('user-id').innerText = user._id;
+                    document.getElementById('user-email').innerText = user.email || 'N/A';
+                    
+                    if (user.avatar) {
+                        const avatarImg = document.getElementById('user-avatar');
+                        avatarImg.src = user.avatar;
+                        avatarImg.classList.remove('hidden');
+                    }
+                }
+            } catch (err) { window.location.href = '/'; }
+        }
+        loadUser();
+
+        // 2. Recherche OSINT optimisée sans bug de casse
+        async function performSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            const resultsSection = document.getElementById('search-results');
+            const resultsContainer = document.getElementById('results-container');
+            const resultsCount = document.getElementById('results-count');
+
+            if (!query) return;
+
+            resultsSection.classList.remove('hidden');
+            resultsContainer.innerHTML = `<div class="text-slate-500 animate-pulse font-mono">> Querying centralized node datasets...</div>`;
+
+            try {
+                // Encode properly and fetch
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                resultsContainer.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    resultsCount.innerText = "0 RECORDS FOUND";
+                    resultsCount.className = "text-rose-500 font-bold";
+                    resultsContainer.innerHTML = `<div class="text-slate-500 bg-rose-950/10 border border-rose-900/30 rounded-xl p-4 font-mono">> [CRITICAL]: No data found for query sequence "${query}".</div>`;
+                    return;
+                }
+
+                resultsCount.innerText = `${data.length} RECORD(S) IDENTIFIED`;
+                resultsCount.className = "text-emerald-400 font-bold";
+
+                data.forEach(target => {
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-950/80 border border-slate-900 rounded-xl p-4 text-slate-400 space-y-1 relative text-left";
+                    
+                    card.innerHTML = `
+                        <div class="absolute top-0 right-0 bg-slate-900 border-l border-b border-slate-800 px-3 py-1 text-[9px] font-bold text-slate-400 tracking-widest font-mono">TARGET_FOUND</div>
+                        <div class="text-slate-200 font-bold text-sm mb-2 font-mono">${target.username || 'N/A'}</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                            <div><span class="text-slate-600">DATABASE_ID :</span> ${target._id || 'N/A'}</div>
+                            <div><span class="text-slate-600">DISCORD_ID :</span> ${target.discordId || 'N/A'}</div>
+                            <div><span class="text-slate-600">EMAIL_NODE :</span> <span class="text-slate-300">${target.email || 'N/A'}</span></div>
+                            <div><span class="text-slate-600">IP_ADDRESS :</span> <span class="text-slate-300">${target.ipAddress || 'N/A'}</span></div>
+                            <div><span class="text-slate-600">SYS_STATUS :</span> <span class="text-slate-400">${target.status || 'Actif'}</span></div>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(card);
+                });
+
+            } catch (error) {
+                resultsCount.innerText = "API_ERROR";
+                resultsCount.className = "text-rose-500";
+                resultsContainer.innerHTML = `<div class="text-rose-400 font-mono">> Failure connecting to authentication API backend.</div>`;
+            }
+        }
+
+        document.getElementById('search-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        // 3. Graphique linéaire Slate/White
+        const ctxChart = document.getElementById('neonChart').getContext('2d');
+        const gradientLine = ctxChart.createLinearGradient(0, 0, 0, 150);
+        gradientLine.addColorStop(0, 'rgba(148, 163, 184, 0.1)');
+        gradientLine.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        new Chart(ctxChart, {
+            type: 'line',
+            data: {
+                labels: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+                datasets: [{
+                    label: 'Queries',
+                    data: [30, 45, 35, 60, 40, 120, 55],
+                    borderColor: '#94a3b8',
+                    borderWidth: 1.5,
+                    pointRadius: 2,
+                    pointBackgroundColor: '#94a3b8',
+                    tension: 0.35,
+                    fill: true,
+                    backgroundColor: gradientLine
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#475569', font: { size: 9, family: 'monospace' } } },
+                    y: { grid: { color: 'rgba(30, 41, 59, 0.3)' }, ticks: { color: '#475569', font: { size: 9, family: 'monospace' } } }
+                }
+            }
+        });
+
+        // 4. Moteur de particules fluides monochromes
+        const canvas = document.getElementById('canvas-particles');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+        const mouse = { x: null, y: null, radius: 120 };
+
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 1;
+                this.baseX = this.x; this.baseY = this.y;
+                this.vx = (Math.random() - 0.5) * 0.2;
+                this.vy = (Math.random() - 0.5) * 0.2;
+                this.density = (Math.random() * 8) + 10;
+            }
+            draw() {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(148, 163, 184, 0.12)'; ctx.fill();
+            }
+            update() {
+                this.baseX += this.vx; this.baseY += this.vy;
+                if (this.baseX < 0 || this.baseX > canvas.width) this.vx = -this.vx;
+                if (this.baseY < 0 || this.baseY > canvas.height) this.vy = -this.vy;
+                
+                let dx = mouse.x - this.x; let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (mouse.x !== null && distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    this.x += (dx / distance) * force * this.density * 0.25;
+                    this.y += (dy / distance) * force * this.density * 0.25;
+                } else {
+                    this.x += (this.baseX - this.x) / 15;
+                    this.y += (this.baseY - this.y) / 15;
+                }
+            }
+        }
+        function init() {
+            particlesArray = [];
+            for (let i = 0; i < 60; i++) particlesArray.push(new Particle());
+        }
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update(); particlesArray[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+        init(); animate();
+    </script>
+</body>
+</html>
