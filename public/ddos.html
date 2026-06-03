@@ -2,17 +2,225 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Kronix - DDOS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kronix | Stresser</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #030712;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        .cyber-glow {
+            position: absolute;
+            width: 700px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(76, 29, 149, 0.05) 50%, rgba(0,0,0,0) 100%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .glow-1 { top: 15%; left: 50%; transform: translate(-50%, -50%); }
+        .glow-2 { top: 70%; left: 50%; transform: translate(-50%, -50%); }
+        .main-container { position: relative; z-index: 10; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #2e1065; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4c1d95; }
+    </style>
 </head>
-<body class="bg-[#050508] text-gray-200 min-h-screen font-sans">
-    <div class="max-w-4xl mx-auto pt-20 px-6 text-center">
-        <h1 class="text-4xl font-black font-mono tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-purple-600">MODULE DDOS</h1>
-        <p class="text-gray-500 text-xs mt-2 uppercase tracking-widest">Interface de test réseau en cours de développement</p>
-        <div class="mt-12 p-8 bg-[#0b0b12] border border-red-950/20 rounded-2xl text-sm max-w-md mx-auto text-gray-400">
-            🔒 Ce module nécessite des clés API stresser actives.
+<body class="text-violet-200 font-sans antialiased selection:bg-violet-500/30">
+
+    <div class="cyber-glow glow-1"></div>
+    <div class="cyber-glow glow-2"></div>
+
+    <canvas id="canvas-particles" class="fixed top-0 left-0 w-full h-full pointer-events-none" style="z-index: 2;"></canvas>
+
+    <section class="min-h-screen flex flex-col justify-between p-6 main-container">
+        
+        <nav class="w-full max-w-4xl mx-auto bg-slate-950/60 backdrop-blur-xl border border-violet-900/40 rounded-full px-6 py-3 flex justify-between items-center shadow-2xl mt-2">
+            <div class="flex items-center gap-2 font-mono text-xs font-black tracking-widest text-violet-400">
+                <span class="inline-block w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span> KRONIX//PANEL
+            </div>
+            <div class="hidden sm:flex items-center gap-6 text-xs text-violet-300 font-medium font-mono">
+                <a href="/dashboard" class="hover:text-white transition">CONSOLE</a>
+                <a href="/ddos" class="text-white border-b border-violet-500 pb-0.5">STRESSER</a>
+                <a href="/plans" class="hover:text-white transition">SUBS</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 bg-slate-900/80 border border-violet-900/30 py-1 px-3 rounded-full">
+                    <img id="user-avatar" src="" alt="Avatar" class="w-4 h-4 rounded-full border border-violet-500 hidden">
+                    <span id="user-nav-name" class="text-[11px] font-mono font-medium text-violet-300">Loading...</span>
+                </div>
+                <a href="/logout" class="text-violet-500 hover:text-rose-400 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 01-3-3h4a3 3 0 013 3v1"></path></svg>
+                </a>
+            </div>
+        </nav>
+
+        <div class="w-full max-w-3xl mx-auto bg-slate-950/40 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 shadow-2xl my-auto mt-12 mb-6">
+            <h2 class="text-xl font-bold text-white font-sans mb-2 flex items-center gap-2">
+                Panel de Stress Réseau ⚡
+            </h2>
+            <p class="text-xs text-slate-400 mb-6 font-mono">> Prêt à envoyer la séquence de requêtes simulées.</p>
+
+            <form id="stresser-form" onsubmit="launchAttack(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+                <div>
+                    <label class="block text-violet-400 mb-1">CIBLE (IP / DOMAINE)</label>
+                    <input type="text" id="target-host" placeholder="127.0.0.1" required class="w-full bg-slate-950 border border-violet-900/40 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:border-violet-600 transition">
+                </div>
+                <div>
+                    <label class="block text-violet-400 mb-1">PORT</label>
+                    <input type="number" id="target-port" placeholder="80" required class="w-full bg-slate-950 border border-violet-900/40 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:border-violet-600 transition">
+                </div>
+                <div>
+                    <label class="block text-violet-400 mb-1">TEMPS (SECONDES)</label>
+                    <input type="number" id="target-time" placeholder="60" required class="w-full bg-slate-950 border border-violet-900/40 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:border-violet-600 transition">
+                </div>
+                <div>
+                    <label class="block text-violet-400 mb-1">MÉTHODE</label>
+                    <select id="target-method" class="w-full bg-slate-950 border border-violet-900/40 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:border-violet-600 transition appearance-none">
+                        <option value="UDP-RAW">UDP-RAW (Layer 4)</option>
+                        <option value="TCP-SYN">TCP-SYN (Layer 4)</option>
+                        <option value="HTTP-BYPASS">HTTP-BYPASS (Layer 7)</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2 mt-2">
+                    <button type="submit" class="w-full bg-violet-950/60 hover:bg-violet-900 border border-violet-700 text-white font-bold py-3 rounded-xl transition text-center flex justify-center items-center gap-2">
+                        LANCER LE TEST DE CHARGE <span>→</span>
+                    </button>
+                </div>
+            </form>
         </div>
-        <a href="/dashboard" class="inline-block mt-8 bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-3 rounded-xl text-sm transition">← Retour</a>
-    </div>
+
+        <div class="w-full max-w-3xl mx-auto bg-slate-950/20 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 shadow-2xl mb-6">
+            <div class="flex justify-between items-center text-xs font-mono text-slate-500 mb-3">
+                <span>HISTORIQUE DES SESSIONS DE SIMULATION</span>
+                <span class="text-violet-400 font-bold uppercase tracking-wider">STATUT DE L'API : PRÊT</span>
+            </div>
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left font-mono text-[11px] text-slate-400">
+                    <thead>
+                        <tr class="border-b border-violet-950 text-violet-400">
+                            <th class="pb-2">CIBLE</th>
+                            <th class="pb-2">PORT</th>
+                            <th class="pb-2">DURÉE</th>
+                            <th class="pb-2">MÉTHODE</th>
+                            <th class="pb-2 text-right">STATUT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attack-history">
+                        <tr class="border-b border-slate-900/50">
+                            <td class="py-3 text-slate-300">192.168.1.45</td>
+                            <td class="py-3">80</td>
+                            <td class="py-3">120s</td>
+                            <td class="py-3 text-violet-400">HTTP-BYPASS</td>
+                            <td class="py-3 text-right text-rose-500 font-bold">TERMINÉ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Charger la session de l'utilisateur
+        async function loadUser() {
+            try {
+                const response = await fetch('/api/user');
+                if (!response.ok) return window.location.href = '/';
+                const user = await response.json();
+                if (user) {
+                    document.getElementById('user-nav-name').innerText = user.username;
+                    if (user.avatar) {
+                        const avatarImg = document.getElementById('user-avatar');
+                        avatarImg.src = user.avatar;
+                        avatarImg.classList.remove('hidden');
+                    }
+                }
+            } catch (err) { window.location.href = '/'; }
+        }
+        loadUser();
+
+        // Fonction d'envoi du formulaire (Simulation visuelle complète)
+        function launchAttack(e) {
+            e.preventDefault();
+            const host = document.getElementById('target-host').value;
+            const port = document.getElementById('target-port').value;
+            const time = document.getElementById('target-time').value;
+            const method = document.getElementById('target-method').value;
+
+            const tbody = document.getElementById('attack-history');
+            const newRow = document.createElement('tr');
+            newRow.className = "border-b border-slate-900/50";
+            newRow.innerHTML = `
+                <td class="py-3 text-slate-300">${host}</td>
+                <td class="py-3">${port}</td>
+                <td class="py-3">${time}s</td>
+                <td class="py-3 text-violet-400">${method}</td>
+                <td class="py-3 text-right text-emerald-400 font-bold animate-pulse">EN COURS...</td>
+            `;
+            tbody.insertBefore(newRow, tbody.firstChild);
+            document.getElementById('stresser-form').reset();
+        }
+
+        // Script de particules fluides identique
+        const canvas = document.getElementById('canvas-particles');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+        const mouse = { x: null, y: null, radius: 100 };
+
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 1;
+                this.baseX = this.x; this.baseY = this.y;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.density = (Math.random() * 10) + 10;
+            }
+            draw() {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(167, 139, 250, 0.2)'; ctx.fill();
+            }
+            update() {
+                this.baseX += this.vx; this.baseY += this.vy;
+                if (this.baseX < 0 || this.baseX > canvas.width) this.vx = -this.vx;
+                if (this.baseY < 0 || this.baseY > canvas.height) this.vy = -this.vy;
+                
+                let dx = mouse.x - this.x; let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (mouse.x !== null && distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    this.x += (dx / distance) * force * this.density * 0.2;
+                    this.y += (dy / distance) * force * this.density * 0.2;
+                } else {
+                    this.x += (this.baseX - this.x) / 10;
+                    this.y += (this.baseY - this.y) / 10;
+                }
+            }
+        }
+        function init() {
+            particlesArray = [];
+            for (let i = 0; i < 50; i++) particlesArray.push(new Particle());
+        }
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update(); particlesArray[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+        init(); animate();
+    </script>
 </body>
 </html>
