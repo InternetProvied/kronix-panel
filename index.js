@@ -11,14 +11,12 @@ const PORT = process.env.PORT || 3000;
 // ==========================================
 // 1. BASE DE DONNÉES LOCALE (TABLEAU JS)
 // ==========================================
-// Les comptes créés s'enregistreront ici en temps réel.
-// Attention : si le serveur gratuit de Render s'endort, ce tableau se réinitialise.
 const localUsersDB = [
     {
         _id: "user_admin_kronix",
         username: "Admin",
         email: "admin@kronix.local",
-        password: "admin", // Ton mot de passe par défaut pour te connecter
+        password: "admin", // Ton mot de passe admin par défaut
         discordId: "000000000000000000",
         ipAddress: "127.0.0.1",
         avatar: "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=100&h=100&q=80",
@@ -37,10 +35,9 @@ app.use(session({
     secret: 'kronix_super_secret_key_1234',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // Session active pendant 1 jour
+    cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Initialisation de Passport pour les connexions tierces
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -48,7 +45,7 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
 // ==========================================
-// 3. CONFIGURATION DES STRATÉGIES PASSPORT (API)
+// 3. CONFIGURATION DES STRATÉGIES PASSPORT
 // ==========================================
 passport.use(new DiscordStrategy({
     clientID: 'TON_DISCORD_CLIENT_ID', 
@@ -57,7 +54,6 @@ passport.use(new DiscordStrategy({
     scope: ['identify', 'email']
 }, (accessToken, refreshToken, profile, done) => {
     let user = localUsersDB.find(u => u.discordId === profile.id);
-    
     if (!user) {
         user = {
             _id: "user_" + Date.now(),
@@ -70,7 +66,6 @@ passport.use(new DiscordStrategy({
             status: 'Actif'
         };
         localUsersDB.push(user);
-        console.log(`✨ Nouveau compte Discord enregistré : ${user.username}`);
     }
     return done(null, user);
 }));
@@ -82,7 +77,6 @@ passport.use(new GoogleStrategy({
 }, (token, tokenSecret, profile, done) => {
     const emailStr = profile.emails && profile.emails[0] ? profile.emails[0].value : 'Non renseigné';
     let user = localUsersDB.find(u => u.email === emailStr);
-    
     if (!user) {
         user = {
             _id: "user_" + Date.now(),
@@ -95,49 +89,32 @@ passport.use(new GoogleStrategy({
             status: 'Actif'
         };
         localUsersDB.push(user);
-        console.log(`✨ Nouveau compte Google enregistré : ${user.username}`);
     }
     return done(null, user);
 }));
 
 // ==========================================
-// 4. ROUTES DE NAVIGATION & D'AUTHENTIFICATION
+// 4. ROUTES D'AUTHENTIFICATION & NAVIGATION
 // ==========================================
 
-// Page d'accueil / Login
 app.get('/', (req, res) => {
     if (req.session && req.session.user) return res.redirect('/dashboard');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Traitement de la connexion classique
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     const user = localUsersDB.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-    
-    if (!user) {
-        return res.send('<script>alert("Identifiants incorrects."); window.location.href="/";</script>');
-    }
-    
+    if (!user) return res.send('<script>alert("Identifiants incorrects."); window.location.href="/";</script>');
     req.session.user = user;
     res.redirect('/dashboard');
 });
 
-// Traitement de la création de compte (Inscription)
 app.post('/register', (req, res) => {
     const { username, email, password } = req.body;
+    const userExists = localUsersDB.find(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase());
+    if (userExists) return res.send('<script>alert("Nom d\'utilisateur ou email déjà pris."); window.location.href="/";</script>');
 
-    // On vérifie si le nom d'utilisateur ou l'email existe déjà
-    const userExists = localUsersDB.find(u => 
-        u.username.toLowerCase() === username.toLowerCase() || 
-        u.email.toLowerCase() === email.toLowerCase()
-    );
-
-    if (userExists) {
-        return res.send('<script>alert("Ce nom d\'utilisateur ou cet email est déjà utilisé."); window.location.href="/";</script>');
-    }
-
-    // Création du nouvel utilisateur
     const newUser = {
         _id: "user_" + Date.now(),
         username: username,
@@ -148,16 +125,11 @@ app.post('/register', (req, res) => {
         avatar: "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=100&h=100&q=80",
         status: "Membre"
     };
-
     localUsersDB.push(newUser);
-    console.log(`✨ Nouveau compte créé via le panel : ${newUser.username}`);
-
-    // Connexion auto après inscription
     req.session.user = newUser;
     res.send('<script>alert("Compte créé avec succès !"); window.location.href="/dashboard";</script>');
 });
 
-// Redirections API Oauth2
 app.get('/auth/discord', passport.authenticate('discord'));
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
@@ -171,32 +143,36 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
     res.redirect('/dashboard');
 });
 
-// Infos de session pour le Dashboard
 app.get('/api/user', (req, res) => {
     if (!req.session || !req.session.user) return res.status(401).json({ error: 'Non authentifié' });
     res.json(req.session.user);
 });
 
-// Déconnexion
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
 
-// Accès au tableau de bord
+// Pages du Dashboard
 app.get('/dashboard', (req, res) => {
     if (!req.session || !req.session.user) return res.redirect('/');
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// ==========================================
-// 5. L'API DE RECHERCHE (OSINT)
-// ==========================================
+app.get('/ddos', (req, res) => {
+    if (!req.session || !req.session.user) return res.redirect('/');
+    res.sendFile(path.join(__dirname, 'public', 'ddos.html'));
+});
+
+app.get('/plans', (req, res) => {
+    if (!req.session || !req.session.user) return res.redirect('/');
+    res.sendFile(path.join(__dirname, 'public', 'plans.html'));
+});
+
+// API de Recherche OSINT
 app.get('/api/search', (req, res) => {
     if (!req.session || !req.session.user) return res.status(401).json({ error: 'Accès refusé.' });
-    
     const query = req.query.q;
     if (!query) return res.status(400).json({ error: 'Recherche vide.' });
-
     const lowerQuery = query.toLowerCase();
 
     const results = localUsersDB.filter(user => {
@@ -210,11 +186,9 @@ app.get('/api/search', (req, res) => {
         const { password, ...safeUser } = user;
         return safeUser;
     });
-
     res.json(results);
 });
 
 app.listen(PORT, () => {
     console.log(`🚀 Serveur Kronix en ligne sur : http://localhost:${PORT}`);
-    console.log(`🔹 Mode base de données locale active (Sans MongoDB).`);
 });
