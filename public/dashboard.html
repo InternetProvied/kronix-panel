@@ -12,7 +12,6 @@
             overflow-x: hidden;
             scroll-behavior: smooth;
         }
-        /* Ton effet de lueur violette d'origine */
         .cyber-glow {
             position: absolute;
             width: 700px;
@@ -49,6 +48,8 @@
                 <a href="/dashboard" class="text-white border-b border-violet-500 pb-0.5">CONSOLE</a>
                 <a href="/ddos" class="hover:text-white transition">STRESSER</a>
                 <a href="/plans" class="hover:text-white transition">SUBS</a>
+                <!-- Onglet ADMIN Rouge Flashy (Caché de base) -->
+                <a id="admin-nav-item" href="#admin-panel" class="hidden text-rose-500 font-bold border border-rose-500/30 px-3 py-1 rounded-full bg-rose-950/20 hover:bg-rose-900/40 transition animate-pulse">⚙️ ADMIN</a>
             </div>
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-2 bg-slate-900/80 border border-violet-900/30 py-1 px-3 rounded-full">
@@ -60,6 +61,35 @@
                 </a>
             </div>
         </nav>
+
+        <!-- PANNEAU ADMINISTRATEUR GESTION DES ROLES (Affiché uniquement si admin) -->
+        <div id="admin-panel" class="hidden w-full max-w-3xl mx-auto bg-slate-950/60 backdrop-blur-xl border-2 border-rose-600/50 rounded-2xl p-6 text-left shadow-2xl mt-8">
+            <div class="flex items-center justify-between border-b border-rose-950 pb-3 mb-4">
+                <h2 class="text-lg font-mono font-black text-rose-500 flex items-center gap-2 tracking-wide">
+                    <span class="w-2 h-2 bg-rose-500 rounded-full"></span> KRONIX CONTROL CENTER // ACTIONS REQUISES
+                </h2>
+                <span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded font-mono font-bold">ACCÈS ROOT</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-4 font-mono">> Assigner un plan ou modifier les permissions d'accès d'un utilisateur :</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input type="text" id="admin-user-id" placeholder="ID de la base de données MongoDB..." class="md:col-span-1 bg-slate-900/90 border border-rose-950 focus:border-rose-500 text-sm p-3 rounded-xl focus:outline-none text-slate-300 font-mono placeholder-slate-700">
+                
+                <select id="admin-role-select" class="bg-slate-900/90 border border-rose-950 focus:border-rose-500 text-sm p-3 rounded-xl focus:outline-none text-slate-300 font-mono cursor-pointer">
+                    <option value="Starter">Plan : Starter</option>
+                    <option value="Pro">Plan : Pro</option>
+                    <option value="Premium">Plan : Premium</option>
+                    <option value="1337">Plan : 1337</option>
+                    <option value="UHQ">Plan : UHQ</option>
+                    <option value="admin">Rang : Administrateur</option>
+                </select>
+
+                <button onclick="updateUserRole()" class="bg-rose-950/40 hover:bg-rose-900 border border-rose-600 text-rose-200 font-mono font-bold px-4 py-3 rounded-xl text-xs transition uppercase tracking-wider">
+                    Sauvegarder les droits
+                </button>
+            </div>
+            <div id="admin-status-message" class="mt-3 text-[11px] font-mono hidden"></div>
+        </div>
 
         <div class="flex flex-col items-center justify-center my-auto relative pt-12">
             <div class="w-full max-w-3xl bg-slate-950/40 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 text-left shadow-2xl">
@@ -112,7 +142,7 @@
     </section>
 
     <script>
-        // 1. Gestion de la session utilisateur
+        // 1. Gestion de la session utilisateur + Vérification Admin
         async function loadUser() {
             try {
                 const response = await fetch('/api/user');
@@ -130,10 +160,52 @@
                         avatarImg.src = user.avatar;
                         avatarImg.classList.remove('hidden');
                     }
+
+                    // CONDITION DE SECURITE VISUELLE : Si tu es admin, on affiche les options rouges !
+                    if (user.role === 'admin') {
+                        document.getElementById('admin-nav-item').classList.remove('hidden');
+                        document.getElementById('admin-panel').classList.remove('hidden');
+                    }
                 }
             } catch (err) { window.location.href = '/'; }
         }
         loadUser();
+
+        // FONCTION ADMIN : Envoi des modifications de droits au serveur
+        async function updateUserRole() {
+            const userId = document.getElementById('admin-user-id').value.trim();
+            const newPlan = document.getElementById('admin-role-select').value;
+            const msgBox = document.getElementById('admin-status-message');
+
+            if(!userId) {
+                msgBox.className = "mt-3 text-[11px] font-mono text-rose-500";
+                msgBox.innerText = "[ERREUR] Tu dois spécifier un ID utilisateur.";
+                msgBox.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/update-role', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, newPlan })
+                });
+                const result = await response.json();
+
+                if(result.success) {
+                    msgBox.className = "mt-3 text-[11px] font-mono text-emerald-400";
+                    msgBox.innerText = `[SUCCESS] ${result.message}`;
+                } else {
+                    msgBox.className = "mt-3 text-[11px] font-mono text-rose-500";
+                    msgBox.innerText = `[ERREUR] ${result.message}`;
+                }
+                msgBox.classList.remove('hidden');
+            } catch (error) {
+                msgBox.className = "mt-3 text-[11px] font-mono text-rose-500";
+                msgBox.innerText = "[ERREUR] Impossible de contacter l'API Kronix.";
+                msgBox.classList.remove('hidden');
+            }
+        }
 
         // 2. Correction du moteur de recherche pour afficher les cibles
         async function performSearch() {
