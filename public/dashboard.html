@@ -5,31 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kronix | Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #030712; overflow-x: hidden; scroll-behavior: smooth; }
-        .cyber-glow {
-            position: absolute; width: 700px; height: 350px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(76, 29, 149, 0.05) 50%, rgba(0,0,0,0) 100%);
-            filter: blur(60px); pointer-events: none; z-index: 1;
+        body { background-color: #020205; overflow-x: hidden; scroll-behavior: smooth; }
+        
+        /* Effet de fondu noir sur le canvas pour que le haut de l'écran reste bien sombre et lisible */
+        .canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
         }
-        .glow-1 { top: 15%; left: 50%; transform: translate(-50%, -50%); }
-        .glow-2 { top: 70%; left: 50%; transform: translate(-50%, -50%); }
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #020205 30%, rgba(2, 2, 5, 0.7) 70%, transparent 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+        
         .main-container { position: relative; z-index: 10; }
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-track { background: #020205; }
         ::-webkit-scrollbar-thumb { background: #2e1065; border-radius: 3px; }
     </style>
 </head>
 <body class="text-violet-200 font-sans antialiased selection:bg-violet-500/30">
 
-    <div class="cyber-glow glow-1"></div>
-    <div class="cyber-glow glow-2"></div>
-
-    <canvas id="canvas-particles" class="fixed top-0 left-0 w-full h-full pointer-events-none" style="z-index: 2;"></canvas>
+    <!-- ARRIÈRE-PLAN : PISTONS 3D -->
+    <div class="canvas-container">
+        <div class="canvas-overlay"></div>
+        <canvas id="3d-pistons"></canvas>
+    </div>
 
     <section class="min-h-screen flex flex-col justify-between p-6 main-container">
         
+        <!-- BARRE DE NAVIGATION -->
         <nav class="w-full max-w-4xl mx-auto bg-slate-950/60 backdrop-blur-xl border border-violet-900/40 rounded-full px-6 py-3 flex justify-between items-center shadow-2xl mt-2">
             <div class="flex items-center gap-2 font-mono text-xs font-black tracking-widest text-violet-400">
                 <span class="inline-block w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span> KRONIX//PANEL
@@ -50,8 +66,9 @@
             </div>
         </nav>
 
+        <!-- INFO UTILISATEUR -->
         <div class="flex flex-col items-center justify-center my-auto relative pt-12">
-            <div class="w-full max-w-3xl bg-slate-950/40 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 text-left shadow-2xl">
+            <div class="w-full max-w-3xl bg-slate-950/60 backdrop-blur-xl border border-violet-950/60 rounded-2xl p-6 text-left shadow-2xl">
                 <h2 class="text-xl font-bold text-white font-sans flex items-center gap-2">
                     Bienvenue sur le panel, <span id="user-welcome-name" class="text-violet-400">Admin</span> 👋
                 </h2>
@@ -65,7 +82,8 @@
             </div>
         </div>
 
-        <div class="w-full max-w-3xl mx-auto bg-slate-950/20 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 shadow-2xl mb-6">
+        <!-- BARRE DE RECHERCHE UNIVERSELLE -->
+        <div class="w-full max-w-3xl mx-auto bg-slate-950/40 backdrop-blur-xl border border-violet-950/60 rounded-2xl p-6 shadow-2xl mb-6">
             <div class="flex flex-col sm:flex-row items-center gap-3 bg-slate-950/80 border border-violet-900/40 rounded-xl px-4 py-2 mb-3 focus-within:border-violet-600 transition w-full">
                 <div class="flex items-center gap-2 w-full sm:w-auto border-b sm:border-b-0 sm:border-r border-violet-900/40 pb-2 sm:pb-0 sm:pr-2">
                     <svg class="w-4 h-4 text-violet-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -83,6 +101,7 @@
                 </button>
             </div>
 
+            <!-- CONTENEUR DES RÉSULTATS -->
             <div id="search-results" class="hidden mt-4 border-t border-violet-950 pt-4 text-xs">
                 <div class="flex items-center justify-between text-slate-500 mb-3 font-mono">
                     <span>ANALYSE DES COMPOSANTS DISTANTS</span>
@@ -101,6 +120,7 @@
     </section>
 
     <script>
+        // --- CHARGEMENT UTILISATEUR ---
         async function loadUser() {
             try {
                 const response = await fetch('/api/user');
@@ -120,6 +140,7 @@
         }
         loadUser();
 
+        // --- CODE MOTEUR DE RECHERCHE ---
         async function performLookup() {
             const type = document.getElementById('lookup-type').value;
             const query = document.getElementById('search-input').value.trim();
@@ -137,7 +158,6 @@
             try {
                 const response = await fetch(`/api/lookup?query=${encodeURIComponent(query)}&type=${type}`);
                 const data = await response.json();
-
                 resultsContainer.innerHTML = '';
 
                 if (!response.ok || !data.success) {
@@ -151,9 +171,8 @@
                 resultsStatus.className = "text-emerald-400 font-bold font-mono";
 
                 const card = document.createElement('div');
-                card.className = "bg-slate-950/80 border border-violet-950 rounded-xl p-4 text-slate-400 space-y-3 text-left relative overflow-hidden";
+                card.className = "bg-slate-950/90 border border-violet-950 rounded-xl p-4 text-slate-400 space-y-3 text-left relative overflow-hidden backdrop-blur-md";
 
-                // AFFICHAGE TYPE DISCORD ID
                 if (data.type === 'discord_id') {
                     card.innerHTML = `
                         ${data.results.banner ? `<div class="w-full h-16 bg-cover bg-center rounded-t-lg -mt-4 -mx-4 mb-2" style="background-image: url('${data.results.banner}')"></div>` : ''}
@@ -170,10 +189,7 @@
                             <div><span class="text-violet-500">COULEUR ACCENT :</span> <span style="color: ${data.results.accentColor}">${data.results.accentColor}</span></div>
                         </div>
                     `;
-                }
-                
-                // AFFICHAGE TYPE IP
-                else if (data.type === 'ip') {
+                } else if (data.type === 'ip') {
                     card.innerHTML = `
                         <div class="text-emerald-400 font-bold text-sm mb-1 font-mono">> TRACAGE IP REUSSI</div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
@@ -183,10 +199,7 @@
                             <div class="sm:col-span-2"><span class="text-violet-500">ORGANISATION :</span> ${data.results.organisation}</div>
                         </div>
                     `;
-                }
-
-                // AFFICHAGE TYPE USERNAME
-                else if (data.type === 'username') {
+                } else if (data.type === 'username') {
                     let list = '';
                     data.results.forEach(p => {
                         list += `
@@ -200,45 +213,102 @@
                         <div class="space-y-2">${list}</div>
                     `;
                 }
-
                 resultsContainer.appendChild(card);
-
             } catch (error) {
                 resultsStatus.innerText = "Erreur";
                 resultsStatus.className = "text-rose-500 font-bold";
                 resultsContainer.innerHTML = `<div class="text-rose-400 font-mono">Erreur de connexion.</div>`;
             }
         }
-
         document.getElementById('search-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') performLookup(); });
 
-        // --- GRAPH ET PARTICULES ---
-        const ctxChart = document.getElementById('neonChart')?.getContext('2d');
-        if(ctxChart) {
-            new Chart(ctxChart, {
-                type: 'line',
-                data: {
-                    labels: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-                    datasets: [{ label: 'Requêtes', data: [40, 55, 45, 70, 50, 110, 65], borderColor: '#8b5cf6', tension: 0.4, fill: false }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
 
-        const canvas = document.getElementById('canvas-particles');
+        // ==========================================
+        // MOTEUR RENDU GRAPHIQUE 3D ISOMÉTRIQUE (PISTONS)
+        // ==========================================
+        const canvas = document.getElementById('3d-pistons');
         const ctx = canvas.getContext('2d');
-        let particlesArray = [];
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize); resize();
 
-        class Particle {
-            constructor() { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; this.size = Math.random()*1.5+1; this.vx = (Math.random()-0.5)*0.3; this.vy = (Math.random()-0.5)*0.3; }
-            draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fillStyle = 'rgba(167, 139, 250, 0.15)'; ctx.fill(); }
-            update() { this.x += this.vx; this.y += this.vy; if(this.x<0||this.x>canvas.width) this.vx=-this.vx; if(this.y<0||this.y>canvas.height) this.vy=-this.vy; }
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-        for (let i = 0; i < 40; i++) particlesArray.push(new Particle());
-        function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); particlesArray.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animate); }
-        animate();
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Paramètres de la grille de cubes
+        const sizeX = 26; // Taille de la face d'un cube
+        const sizeY = 14; 
+        const gap = 4;    // Espace entre les cubes
+        
+        let time = 0;
+
+        function drawCube(x, y, z, baseColor) {
+            // Calcul des coordonnées 3D projetées en Isométrique (Axonométrique)
+            const isoX = (x - y) * sizeX + canvas.width / 2;
+            const isoY = (x + y) * sizeY + canvas.height * 0.55 - z;
+
+            // Couleur du haut (Face supérieure)
+            ctx.fillStyle = baseColor;
+            ctx.beginPath();
+            ctx.moveTo(isoX, isoY);
+            ctx.lineTo(isoX + sizeX, isoY + sizeY);
+            ctx.lineTo(isoX, isoY + sizeY * 2);
+            ctx.lineTo(isoX - sizeX, isoY + sizeY);
+            ctx.closePath();
+            ctx.fill();
+
+            // Couleur gauche (Face assombrie)
+            ctx.fillStyle = 'rgba(10, 5, 20, 0.6)';
+            ctx.beginPath();
+            ctx.moveTo(isoX - sizeX, isoY + sizeY);
+            ctx.lineTo(isoX, isoY + sizeY * 2);
+            ctx.lineTo(isoX, isoY + sizeY * 2 + 100); // Hauteur du pilier vers le bas
+            ctx.lineTo(isoX - sizeX, isoY + sizeY + 100);
+            ctx.closePath();
+            ctx.fill();
+
+            // Couleur droite (Face intermédiaire)
+            ctx.fillStyle = 'rgba(25, 10, 45, 0.4)';
+            ctx.beginPath();
+            ctx.moveTo(isoX, isoY + sizeY * 2);
+            ctx.lineTo(isoX + sizeX, isoY + sizeY);
+            ctx.lineTo(isoX + sizeX, isoY + sizeY + 100);
+            ctx.lineTo(isoX, isoY + sizeY * 2 + 100);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function animatePistons() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            time += 0.02;
+
+            // On boucle de l'arrière vers l'avant pour gérer l'affichage de superposition (Z-index naturel)
+            for (let x = -10; x < 12; x++) {
+                for (let y = -4; y < 12; y++) {
+                    
+                    // Formule mathématique pour générer des vagues fluides de haut en bas
+                    const distance = Math.sqrt(x * x + y * y);
+                    const wave = Math.sin(distance * 0.4 - time) * Math.cos(x * 0.2 + time * 0.5);
+                    
+                    // Hauteur du piston (z) variant entre 0 et 75 pixels
+                    const z = (wave + 1) * 35;
+
+                    // Variation de couleur violet/sombre selon la hauteur du bloc (comme sur l'image)
+                    const brightness = Math.floor((z / 70) * 45); 
+                    const r = 20 + brightness;
+                    const g = 8 + Math.floor(brightness * 0.3);
+                    const b = 45 + Math.floor(brightness * 1.2);
+                    const color = `rgb(${r}, ${g}, ${b})`;
+
+                    drawCube(x * (sizeX + gap) * 0.04, y * (sizeY + gap) * 0.08, z, color);
+                }
+            }
+            requestAnimationFrame(animatePistons);
+        }
+        
+        // Lancement de l'animation
+        animatePistons();
     </script>
 </body>
 </html>
