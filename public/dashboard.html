@@ -3,101 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kronix - Dashboard</title>
+    <title>Kronix | Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .neon-shadow { box-shadow: 0 0 15px rgba(147, 51, 234, 0.15); }
+        body {
+            background-color: #030712;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        /* Ton effet de lueur violette d'origine */
+        .cyber-glow {
+            position: absolute;
+            width: 700px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(76, 29, 149, 0.05) 50%, rgba(0,0,0,0) 100%);
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .glow-1 { top: 15%; left: 50%; transform: translate(-50%, -50%); }
+        .glow-2 { top: 70%; left: 50%; transform: translate(-50%, -50%); }
+        .main-container { position: relative; z-index: 10; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #2e1065; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4c1d95; }
     </style>
 </head>
-<body class="bg-[#050508] text-gray-200 min-h-screen font-sans antialiased">
+<body class="text-violet-200 font-sans antialiased selection:bg-violet-500/30">
 
-    <nav class="bg-[#0b0b12]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            
-            <div class="flex items-center gap-8">
-                <span class="text-2xl font-black font-mono tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600">KRONIX</span>
-                
-                <div class="flex items-center gap-1 text-sm font-medium text-gray-400">
-                    <a href="/dashboard" class="bg-purple-950/30 text-purple-400 px-4 py-2 rounded-xl border border-purple-900/30 transition">Panel</a>
-                    <a href="/dashboard" class="hover:text-gray-200 px-4 py-2 transition">Statistiques</a>
-                    <a href="/dashboard" class="hover:text-gray-200 px-4 py-2 transition">Données</a>
-                    <a href="/ddos" class="hover:text-purple-400 border border-transparent hover:border-purple-950/40 hover:bg-purple-950/10 px-4 py-2 rounded-xl transition font-mono tracking-wider">DDOS</a>
-                    <a href="/plans" class="hover:text-purple-400 border border-transparent hover:border-purple-950/40 hover:bg-purple-950/10 px-4 py-2 rounded-xl transition font-mono tracking-wider">PLANS</a>
+    <div class="cyber-glow glow-1"></div>
+    <div class="cyber-glow glow-2"></div>
+
+    <canvas id="canvas-particles" class="fixed top-0 left-0 w-full h-full pointer-events-none" style="z-index: 2;"></canvas>
+
+    <section class="min-h-screen flex flex-col justify-between p-6 main-container">
+        
+        <nav class="w-full max-w-4xl mx-auto bg-slate-950/60 backdrop-blur-xl border border-violet-900/40 rounded-full px-6 py-3 flex justify-between items-center shadow-2xl mt-2">
+            <div class="flex items-center gap-2 font-mono text-xs font-black tracking-widest text-violet-400">
+                <span class="inline-block w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span> KRONIX//PANEL
+            </div>
+            <div class="hidden sm:flex items-center gap-6 text-xs text-violet-300 font-medium font-mono">
+                <a href="/dashboard" class="text-white border-b border-violet-500 pb-0.5">CONSOLE</a>
+                <a href="/ddos" class="hover:text-white transition">STRESSER</a>
+                <a href="/plans" class="hover:text-white transition">SUBS</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 bg-slate-900/80 border border-violet-900/30 py-1 px-3 rounded-full">
+                    <img id="user-avatar" src="" alt="Avatar" class="w-4 h-4 rounded-full border border-violet-500 hidden">
+                    <span id="user-nav-name" class="text-[11px] font-mono font-medium text-violet-300">Loading...</span>
+                </div>
+                <a href="/logout" class="text-violet-500 hover:text-rose-400 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 01-3-3h4a3 3 0 013 3v1"></path></svg>
+                </a>
+            </div>
+        </nav>
+
+        <div class="flex flex-col items-center justify-center my-auto relative pt-12">
+            <div class="w-full max-w-3xl bg-slate-950/40 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 text-left shadow-2xl">
+                <h2 class="text-xl font-bold text-white font-sans flex items-center gap-2">
+                    Bienvenue sur le panel, <span id="user-welcome-name" class="text-violet-400">Admin</span> 👋
+                </h2>
+                <p class="text-xs text-slate-400 leading-relaxed border-b border-violet-950 pb-4 mb-4 mt-2">
+                    Connexion réussie. Voici l'interface principale de ton projet Kronix. Toutes tes données de session sont actuellement synchronisées en temps réel.
+                </p>
+                <div class="flex gap-6 text-xs font-mono text-slate-500">
+                    <div>ID BDD: <span id="user-id" class="text-slate-400">...</span></div>
+                    <div>Email: <span id="user-email" class="text-slate-400">...</span></div>
                 </div>
             </div>
+        </div>
 
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <p id="user-name" class="text-sm font-bold text-white">Chargement...</p>
-                    <p id="user-status" class="text-[10px] tracking-widest font-mono text-purple-500 uppercase">Profil</p>
+        <div class="w-full max-w-3xl mx-auto bg-slate-950/20 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 shadow-2xl mb-6">
+            <div class="flex items-center gap-3 bg-slate-950/80 border border-violet-900/40 rounded-xl px-4 py-2 mb-3 focus-within:border-violet-600 transition">
+                <svg class="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="search-input" placeholder="Swayziix" class="bg-transparent text-sm text-slate-300 w-full focus:outline-none placeholder-slate-700">
+                <button onclick="performSearch()" class="bg-violet-950/60 hover:bg-violet-900 border border-violet-700 text-white font-medium px-6 py-2 rounded-xl text-xs transition flex items-center gap-2">
+                    Exécuter <span>→</span>
+                </button>
+            </div>
+
+            <div id="search-results" class="hidden mt-4 border-t border-violet-950 pt-4 text-xs">
+                <div class="flex items-center justify-between text-slate-500 mb-3 font-mono">
+                    <span>RÉSULTAT DE LA RECHERCHE</span>
+                    <span id="results-count" class="text-violet-400">0 trouvé</span>
                 </div>
-                <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-xl border border-purple-500/20 object-cover">
-                <a href="/logout" class="bg-red-950/20 border border-red-900/30 text-red-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-red-900/40 transition">Déconnexion</a>
+                <div id="results-container" class="space-y-3 max-h-64 overflow-y-auto pr-2"></div>
             </div>
 
-        </div>
-    </nav>
-
-    <main class="max-w-7xl mx-auto px-6 py-12">
-        <div class="mb-10">
-            <h2 class="text-xl font-bold text-white">Module de Recherche Global</h2>
-            <p class="text-gray-500 text-xs mt-1">Interroger la base de données locale en temps réel.</p>
-        </div>
-
-        <div class="w-full bg-[#0b0b12]/50 border border-purple-950/20 rounded-2xl p-4 flex gap-3 mb-8 neon-shadow">
-            <input type="text" id="search-input" placeholder="Entrez un pseudo, email, IP ou ID Discord..." class="flex-1 bg-[#050508] border border-gray-900 focus:border-purple-600 focus:outline-none rounded-xl py-3 px-4 text-sm text-white transition placeholder-gray-800">
-            <button onclick="launchSearch()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 rounded-xl text-sm transition">Rechercher</button>
-        </div>
-
-        <div id="results-zone" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex justify-between items-center text-[11px] text-slate-500 font-mono mt-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Base de données MongoDB Atlas connectée
+                </div>
+                <div class="text-violet-400 font-bold uppercase tracking-wider">STATUT DU SERVEUR : EN LIGNE</div>
             </div>
-    </main>
+        </div>
+    </section>
+
+    <section class="py-12 px-6 max-w-4xl mx-auto main-container">
+        <div class="bg-slate-950/40 border border-violet-950 p-6 rounded-2xl shadow-2xl">
+            <h3 class="text-sm font-bold text-violet-400 uppercase font-mono mb-4">> Trafic Réseau & Requêtes</h3>
+            <div class="h-48">
+                <canvas id="neonChart"></canvas>
+            </div>
+        </div>
+    </section>
 
     <script>
-        // Charger le profil utilisateur connecté
-        fetch('/api/user')
-            .then(res => res.json())
-            .then(user => {
-                document.getElementById('user-name').innerText = user.username;
-                document.getElementById('user-status').innerText = user.status;
-                if (user.avatar) document.getElementById('user-avatar').src = user.avatar;
-            })
-            .catch(() => window.location.href = '/');
-
-        // Lancer la recherche OSINT
-        function launchSearch() {
-            const query = document.getElementById('search-input').value;
-            const resultsZone = document.getElementById('results-zone');
-            if(!query) return;
-
-            resultsZone.innerHTML = '<p class="text-gray-600 text-sm">Recherche en cours...</p>';
-
-            fetch(`/api/search?q=${encodeURIComponent(query)}`)
-                .then(res => res.json())
-                .then(data => {
-                    resultsZone.innerHTML = '';
-                    if(data.length === 0) {
-                        resultsZone.innerHTML = '<p class="text-gray-500 text-sm">Aucun résultat trouvé.</p>';
-                        return;
+        // 1. Gestion de la session utilisateur
+        async function loadUser() {
+            try {
+                const response = await fetch('/api/user');
+                if (!response.ok) return window.location.href = '/';
+                const user = await response.json();
+                
+                if (user) {
+                    document.getElementById('user-nav-name').innerText = user.username;
+                    document.getElementById('user-welcome-name').innerText = user.username;
+                    document.getElementById('user-id').innerText = user._id;
+                    document.getElementById('user-email').innerText = user.email || 'N/A';
+                    
+                    if (user.avatar) {
+                        const avatarImg = document.getElementById('user-avatar');
+                        avatarImg.src = user.avatar;
+                        avatarImg.classList.remove('hidden');
                     }
-                    data.forEach(item => {
-                        resultsZone.innerHTML += `
-                            <div class="bg-[#0b0b12] border border-gray-900 p-5 rounded-2xl flex items-center gap-4">
-                                <img src="${item.avatar}" class="w-12 h-12 rounded-xl object-cover border border-purple-950/40">
-                                <div>
-                                    <h3 class="text-white font-bold text-base">${item.username}</h3>
-                                    <p class="text-xs text-purple-400 font-mono mt-0.5">${item.status}</p>
-                                    <div class="text-[11px] text-gray-500 font-mono mt-2 space-y-0.5">
-                                        <p><span class="text-gray-600">Email:</span> ${item.email}</p>
-                                        <p><span class="text-gray-600">Discord ID:</span> ${item.discordId}</p>
-                                        <p><span class="text-gray-600">IP:</span> ${item.ipAddress}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                });
+                }
+            } catch (err) { window.location.href = '/'; }
         }
+        loadUser();
+
+        // 2. Correction du moteur de recherche pour afficher les cibles
+        async function performSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            const resultsSection = document.getElementById('search-results');
+            const resultsContainer = document.getElementById('results-container');
+            const resultsCount = document.getElementById('results-count');
+
+            if (!query) return;
+
+            resultsSection.classList.remove('hidden');
+            resultsContainer.innerHTML = `<div class="text-slate-500 animate-pulse font-mono">> Recherche dans la base de données...</div>`;
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                resultsContainer.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    resultsCount.innerText = "0 trouvé";
+                    resultsCount.className = "text-rose-500";
+                    resultsContainer.innerHTML = `<div class="text-slate-500 bg-violet-950/10 border border-violet-900/20 rounded-xl p-4 font-mono">Aucun résultat trouvé pour la cible "${query}".</div>`;
+                    return;
+                }
+
+                resultsCount.innerText = `${data.length} trouvé(s)`;
+                resultsCount.className = "text-violet-400 font-bold";
+
+                data.forEach(target => {
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-950/60 border border-violet-950 rounded-xl p-4 text-slate-400 space-y-1 relative text-left";
+                    
+                    card.innerHTML = `
+                        <div class="text-violet-300 font-bold text-sm mb-2">${target.username || 'N/A'}</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
+                            <div><span class="text-violet-600">ID BDD :</span> ${target._id || 'N/A'}</div>
+                            <div><span class="text-violet-600">DISCORD ID :</span> ${target.discordId || 'N/A'}</div>
+                            <div><span class="text-violet-600">EMAIL :</span> <span class="text-slate-300">${target.email || 'N/A'}</span></div>
+                            <div><span class="text-violet-600">ADRESSE IP :</span> <span class="text-slate-300">${target.ipAddress || 'N/A'}</span></div>
+                            <div><span class="text-violet-600">STATUT :</span> <span class="text-violet-400">${target.status || 'Actif'}</span></div>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(card);
+                });
+
+            } catch (error) {
+                resultsCount.innerText = "Erreur API";
+                resultsCount.className = "text-rose-500";
+                resultsContainer.innerHTML = `<div class="text-rose-400 font-mono">Erreur de liaison avec le serveur Kronix.</div>`;
+            }
+        }
+
+        document.getElementById('search-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        // 3. Ton graphique Chart.js violet d'origine
+        const ctxChart = document.getElementById('neonChart').getContext('2d');
+        const gradientLine = ctxChart.createLinearGradient(0, 0, 0, 150);
+        gradientLine.addColorStop(0, 'rgba(139, 92, 246, 0.2)');
+        gradientLine.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        new Chart(ctxChart, {
+            type: 'line',
+            data: {
+                labels: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+                datasets: [{
+                    label: 'Requêtes',
+                    data: [40, 55, 45, 70, 50, 110, 65],
+                    borderColor: '#8b5cf6',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#a78bfa',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: gradientLine
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#6d28d9', font: { size: 9, family: 'monospace' } } },
+                    y: { grid: { color: 'rgba(109, 40, 217, 0.1)' }, ticks: { color: '#6d28d9', font: { size: 9, family: 'monospace' } } }
+                }
+            }
+        });
+
+        // 4. Ton script de particules fluides réactives à la souris
+        const canvas = document.getElementById('canvas-particles');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+        const mouse = { x: null, y: null, radius: 100 };
+
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5 + 1;
+                this.baseX = this.x; this.baseY = this.y;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.density = (Math.random() * 10) + 10;
+            }
+            draw() {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(167, 139, 250, 0.2)'; ctx.fill();
+            }
+            update() {
+                this.baseX += this.vx; this.baseY += this.vy;
+                if (this.baseX < 0 || this.baseX > canvas.width) this.vx = -this.vx;
+                if (this.baseY < 0 || this.baseY > canvas.height) this.vy = -this.vy;
+                
+                let dx = mouse.x - this.x; let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (mouse.x !== null && distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    this.x += (dx / distance) * force * this.density * 0.2;
+                    this.y += (dy / distance) * force * this.density * 0.2;
+                } else {
+                    this.x += (this.baseX - this.x) / 10;
+                    this.y += (this.baseY - this.y) / 10;
+                }
+            }
+        }
+        function init() {
+            particlesArray = [];
+            for (let i = 0; i < 50; i++) particlesArray.push(new Particle());
+        }
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update(); particlesArray[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+        init(); animate();
     </script>
 </body>
 </html>
