@@ -43,5 +43,15 @@ app.post('/api/admin/update-role', async (req, res) => {
 app.get('/api/user', (req, res) => {
     res.json(req.session.user || { error: 'Non connecté' });
 });
+// Route pour la page d'accueil
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Route pour le Dashboard
+app.get('/dashboard', (req, res) => {
+    if (!req.session.user) return res.redirect('/');
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 
 app.listen(PORT, () => console.log(`🚀 Serveur démarré sur port ${PORT}`));
