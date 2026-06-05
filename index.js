@@ -5,6 +5,7 @@ const passport = require('passport');
 const mongoose = require('mongoose');
 const DiscordStrategy = require('passport-discord').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const axios = require('axios');
 
 const app = express();
 // Render définit automatiquement le PORT, sinon on prend 3000 en local
