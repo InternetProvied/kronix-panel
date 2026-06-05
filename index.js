@@ -8,11 +8,10 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const axios = require('axios');
 
 const app = express();
-// Render définit automatiquement le PORT, sinon on prend 3000 en local
 const PORT = process.env.PORT || 3000; 
 
 // ==========================================
-// CONNECTER MONGODB ATLAS WITH YOUR CREDENTIALS
+// CONFIGURATION MONGODB ATLAS
 // ==========================================
 const MONGODB_URI = 'mongodb+srv://kronix_admin:tuXipYz..UVS7Y-@cluster0.yq31hua.mongodb.net/kronix_db?retryWrites=true&w=majority&appName=Cluster0';
 
@@ -32,17 +31,14 @@ mongoose.connect(MONGODB_URI)
                     status: 'Fondateur'
                 });
                 await defaultAdmin.save();
-                console.log('✨ Compte Administrateur par défaut injecté dans MongoDB Atlas.');
+                console.log('✨ Compte Administrateur par défaut injecté.');
             }
         } catch (err) {
-            console.error('Erreur lors de l\'initialisation du compte Admin :', err);
+            console.error('Erreur initialisation compte Admin :', err);
         }
     })
     .catch(err => console.error('❌ Erreur de connexion MongoDB :', err));
 
-// ==========================================
-// MODÈLE DE DONNÉES (SCHEMA MONGODB)
-// ==========================================
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true },
     email: { type: String, default: 'Non renseigné' },
@@ -56,7 +52,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // ==========================================
-// CONFIGURATION DES MIDDLEWARES & SESSIONS
+// MIDDLEWARES & SESSIONS
 // ==========================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -83,7 +79,7 @@ passport.deserializeUser(async (id, done) => {
 });
 
 // ==========================================
-// CONFIGURATION DES STRATÉGIES PASSPORT (SÉCURISÉES VIA RENDER)
+// STRATÉGIES PASSPORT
 // ==========================================
 passport.use(new DiscordStrategy({
     clientID: process.env.DISCORD_CLIENT_ID, 
@@ -103,7 +99,6 @@ passport.use(new DiscordStrategy({
                 status: 'Actif'
             });
             await user.save();
-            console.log(`✨ Nouveau compte Discord enregistré dans Atlas : ${user.username}`);
         }
         return done(null, user);
     } catch (err) {
@@ -129,7 +124,6 @@ passport.use(new GoogleStrategy({
                 status: 'Actif'
             });
             await user.save();
-            console.log(`✨ Nouveau compte Google enregistré dans Atlas : ${user.username}`);
         }
         return done(null, user);
     } catch (err) {
@@ -138,9 +132,8 @@ passport.use(new GoogleStrategy({
 }));
 
 // ==========================================
-// ROUTES DE NAVIGATION & D'AUTHENTIFICATION
+// ROUTES DE NAVIGATION
 // ==========================================
-
 app.get('/', (req, res) => {
     if (req.session && req.session.user) return res.redirect('/dashboard');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
@@ -150,15 +143,11 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
         const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i'), password: password });
-        
-        if (!user) {
-            return res.send('<script>alert("Identifiants incorrects (Admin / admin)"); window.location.href="/";</script>');
-        }
-        
+        if (!user) return res.send('<script>alert("Identifiants incorrects"); window.location.href="/";</script>');
         req.session.user = user;
         res.redirect('/dashboard');
     } catch (err) {
-        res.status(500).send('Erreur serveur lors de la connexion.');
+        res.status(500).send('Erreur serveur.');
     }
 });
 
@@ -184,49 +173,13 @@ app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
 
-// --- ACCÈS AUX PAGES DU PANEL ---
 app.get('/dashboard', (req, res) => {
     if (!req.session || !req.session.user) return res.redirect('/');
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-app.get('/ddos', (req, res) => {
-    if (!req.session || !req.session.user) return res.redirect('/');
-    res.sendFile(path.join(__dirname, 'public', 'ddos.html'));
-});
-
-app.get('/plans', (req, res) => {
-    if (!req.session || !req.session.user) return res.redirect('/');
-    res.sendFile(path.join(__dirname, 'public', 'plans.html'));
-});
-
 // ==========================================
-// MOTEUR DE RECHERCHE DANS LA BDD ATLAS (LOCAL)
-// ==========================================
-app.get('/api/search', async (req, res) => {
-    if (!req.session || !req.session.user) return res.status(401).json({ error: 'Accès refusé.' });
-    
-    const query = req.query.q;
-    if (!query) return res.status(400).json({ error: 'Recherche vide.' });
-
-    try {
-        const results = await User.find({
-            $or: [
-                { username: { $regex: query, $options: 'i' } },
-                { email: { $regex: query, $options: 'i' } },
-                { discordId: { $regex: query, $options: 'i' } },
-                { ipAddress: { $regex: query, $options: 'i' } }
-            ]
-        }).select('-password');
-
-        res.json(results);
-    } catch (err) {
-        res.status(500).json({ error: 'Erreur lors de la recherche dans la base de données Atlas.' });
-    }
-});
-
-// ==========================================
-// CONNECTOR API RECHERCHE D'INFRASTRUCTURE EXTERNE
+// MOTEUR DE RECHERCHE ET REQUÊTES EXTERNES (API LOOKUP)
 // ==========================================
 app.get('/api/lookup', async (req, res) => {
     if (!req.session || !req.session.user) return res.status(401).json({ error: 'Accès refusé.' });
@@ -235,14 +188,12 @@ app.get('/api/lookup', async (req, res) => {
     if (!query) return res.status(400).json({ error: 'Le champ de recherche est vide.' });
 
     try {
-        // Option 1 : Analyse des métadonnées d'une adresse IP d'infrastructure
+        // --- OPTION 1 : RECHERCHE PAR ADRESSE IP ---
         if (type === 'ip') {
             const response = await axios.get(`https://ip-api.com/json/${query}?fields=status,message,country,regionName,city,zip,isp,org,as,query`);
-            
             if (response.data.status === 'fail') {
                 return res.status(400).json({ error: 'Adresse IP invalide ou introuvable.' });
             }
-
             return res.json({
                 success: true,
                 type: 'ip',
@@ -258,32 +209,71 @@ app.get('/api/lookup', async (req, res) => {
             });
         }
 
-        // Option 2 : Scan générique de présence de pseudonyme sur les plateformes courantes
-        if (type === 'username') {
-            const platforms = ['GitHub', 'Reddit', 'Twitter'];
-            const checkedPlatforms = platforms.map(platform => ({
-                site: platform,
-                status: 'Profil public accessible',
-                link: `https://${platform.toLowerCase()}.com/${query}`
-            }));
+        // --- OPTION 2 : RECHERCHE PAR DISCORD ID ---
+        if (type === 'discord_id') {
+            // Utilise le Token de ton bot Discord stocké dans tes variables d'environnement Render
+            const botToken = process.env.DISCORD_BOT_TOKEN;
+            if (!botToken) {
+                return res.status(500).json({ error: "Le Token du bot Discord n'est pas configuré sur Render." });
+            }
 
-            return res.json({
-                success: true,
-                type: 'username',
-                results: checkedPlatforms
-            });
+            try {
+                const response = await axios.get(`https://discord.com/api/v10/users/${query}`, {
+                    headers: { Authorization: `Bot ${botToken}` }
+                });
+
+                const user = response.data;
+                const avatarURL = user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : 'https://discord.com/assets/1f0bfc0865d324c2587920a7d80c609b.png';
+                const bannerURL = user.banner ? `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.png?size=512` : null;
+
+                return res.json({
+                    success: true,
+                    type: 'discord_id',
+                    results: {
+                        id: user.id,
+                        username: user.username,
+                        globalName: user.global_name || 'Aucun nom d\'affichage',
+                        avatar: avatarURL,
+                        banner: bannerURL,
+                        accentColor: user.accent_color ? `#${user.accent_color.toString(16)}` : 'Non définie',
+                        bot: user.bot ? 'Oui' : 'Non'
+                    }
+                });
+            } catch (err) {
+                return res.status(404).json({ error: "Aucun utilisateur Discord trouvé avec cet ID, ou Token invalide." });
+            }
+        }
+
+        // --- OPTION 3 : RECHERCHE PAR PSEUDONYME COMPTES SOCIAUX ---
+        if (type === 'username') {
+            const platforms = [
+                { name: 'GitHub', url: `https://github.com/${query}` },
+                { name: 'Reddit', url: `https://www.reddit.com/user/${query}` },
+                { name: 'TikTok', url: `https://www.tiktok.com/@${query}` }
+            ];
+
+            const results = [];
+            for (const platform of platforms) {
+                try {
+                    const check = await axios.get(platform.url, { timeout: 3000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+                    if (check.status === 200) {
+                        results.push({ site: platform.name, status: 'Profil Public Trouvé', link: platform.url });
+                    }
+                } catch (e) {
+                    results.push({ site: platform.name, status: 'Inconnu ou Privé', link: platform.url });
+                }
+            }
+
+            return res.json({ success: true, type: 'username', results });
         }
 
         return res.status(400).json({ error: 'Type de recherche non supporté.' });
 
     } catch (err) {
-        console.error('Erreur API Lookup:', err.message);
-        return res.status(500).json({ error: 'Erreur lors du scan externe.' });
+        return res.status(500).json({ error: 'Erreur lors de l\'analyse externe.' });
     }
 });
 
-// Lancement
 app.listen(PORT, () => {
     console.log(`🚀 Serveur Kronix en ligne sur le port : ${PORT}`);
-    console.log(`🔹 Base de données MongoDB Atlas activée via Mongoose.`);
 });
