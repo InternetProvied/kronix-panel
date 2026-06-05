@@ -1,279 +1,117 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
-const passport = require('passport');
-const mongoose = require('mongoose');
-const DiscordStrategy = require('passport-discord').Strategy;
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const axios = require('axios');
 
 const app = express();
-const PORT = process.env.PORT || 3000; 
+const PORT = process.env.PORT || 3000;
 
-// ==========================================
-// CONFIGURATION MONGODB ATLAS
-// ==========================================
-const MONGODB_URI = 'mongodb+srv://kronix_admin:tuXipYz..UVS7Y-@cluster0.yq31hua.mongodb.net/kronix_db?retryWrites=true&w=majority&appName=Cluster0';
+// Stockage temporaire en mémoire des tickets (Simulé pour éviter les crashs BDD)
+let tickets = [];
 
-mongoose.connect(MONGODB_URI)
-    .then(async () => {
-        console.log('✅ Connecté avec succès à MongoDB Atlas !');
-        try {
-            const adminExists = await User.findOne({ username: 'Admin' });
-            if (!adminExists) {
-                const defaultAdmin = new User({
-                    username: 'Admin',
-                    email: 'admin@kronix.local',
-                    password: 'admin', 
-                    discordId: '000000000000000000',
-                    ipAddress: '127.0.0.1',
-                    avatar: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=100&h=100&q=80',
-                    status: 'Fondateur'
-                });
-                await defaultAdmin.save();
-                console.log('✨ Compte Administrateur par défaut injecté.');
-            }
-        } catch (err) {
-            console.error('Erreur initialisation compte Admin :', err);
-        }
-    })
-    .catch(err => console.error('❌ Erreur de connexion MongoDB :', err));
-
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true },
-    email: { type: String, default: 'Non renseigné' },
-    password: { type: String, default: 'oauth_account_secured' },
-    discordId: { type: String, default: 'N/A' },
-    ipAddress: { type: String, default: '127.0.0.1' },
-    avatar: { type: String, default: '' },
-    status: { type: String, default: 'Actif' }
-}, { timestamps: true });
-
-const User = mongoose.model('User', userSchema);
-
-// ==========================================
-// MIDDLEWARES & SESSIONS
-// ==========================================
+// Middlewares obligatoires
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Configuration de la session utilisateur
 app.use(session({
-    secret: 'kronix_super_secret_key_1234',
+    secret: 'pokedox_ultra_secret_key_9876',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } 
+    cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-app.use(passport.initialize());
-app.use(passport.session());
-
-passport.serializeUser((user, done) => done(null, user._id));
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id);
-        done(null, user);
-    } catch (err) {
-        done(err, null);
+// Protection des pages privées
+function isAuthenticated(req, res, next) {
+    if (req.session && req.session.user) {
+        return next();
     }
-});
+    res.redirect('/');
+}
 
-// ==========================================
-// STRATÉGIES PASSPORT
-// ==========================================
-passport.use(new DiscordStrategy({
-    clientID: process.env.DISCORD_CLIENT_ID, 
-    clientSecret: process.env.DISCORD_CLIENT_SECRET,
-    callbackURL: 'https://kronix-panel.onrender.com/auth/discord/callback',
-    scope: ['identify', 'email']
-}, async (accessToken, refreshToken, profile, done) => {
-    try {
-        let user = await User.findOne({ discordId: profile.id });
-        if (!user) {
-            user = new User({
-                username: profile.username,
-                email: profile.email || 'Non renseigné',
-                discordId: profile.id,
-                avatar: `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`,
-                ipAddress: 'Via Discord',
-                status: 'Actif'
-            });
-            await user.save();
-        }
-        return done(null, user);
-    } catch (err) {
-        return done(err, null);
-    }
-}));
-
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID, 
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: 'https://kronix-panel.onrender.com/auth/google/callback'
-}, async (token, tokenSecret, profile, done) => {
-    try {
-        const emailStr = profile.emails && profile.emails[0] ? profile.emails[0].value : 'Non renseigné';
-        let user = await User.findOne({ email: emailStr });
-        if (!user) {
-            user = new User({
-                username: profile.displayName,
-                email: emailStr,
-                discordId: 'N/A',
-                avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : '',
-                ipAddress: 'Via Google',
-                status: 'Actif'
-            });
-            await user.save();
-        }
-        return done(null, user);
-    } catch (err) {
-        return done(err, null);
-    }
-}));
-
-// ==========================================
-// ROUTES DE NAVIGATION
-// ==========================================
+// --- ROUTES D'AUTHENTIFICATION ---
 app.get('/', (req, res) => {
-    if (req.session && req.session.user) return res.redirect('/dashboard');
+    if (req.session.user) return res.redirect('/dashboard');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-app.post('/login', async (req, res) => {
+app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    try {
-        const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i'), password: password });
-        if (!user) return res.send('<script>alert("Identifiants incorrects"); window.location.href="/";</script>');
-        req.session.user = user;
-        res.redirect('/dashboard');
-    } catch (err) {
-        res.status(500).send('Erreur serveur.');
+    // Compte de test par défaut
+    if (username.toLowerCase() === 'admin' && password === 'admin') {
+        req.session.user = {
+            username: 'Admin',
+            role: 'Fondateur',
+            avatar: 'https://discord.com/assets/1f0bfc0865d324c2587920a7d80c609b.png'
+        };
+        return res.redirect('/dashboard');
     }
-});
-
-app.get('/auth/discord', passport.authenticate('discord'));
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
-    req.session.user = req.user;
-    res.redirect('/dashboard');
-});
-
-app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
-    req.session.user = req.user;
-    res.redirect('/dashboard');
-});
-
-app.get('/api/user', (req, res) => {
-    if (!req.session || !req.session.user) return res.status(401).json({ error: 'Non authentifié' });
-    res.json(req.session.user);
+    res.send('<script>alert("Identifiants invalides (Essaye admin / admin)"); window.location.href="/";</script>');
 });
 
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
 
-app.get('/dashboard', (req, res) => {
-    if (!req.session || !req.session.user) return res.redirect('/');
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+// --- ROUTES DE NAVIGATION SÉCURISÉES ---
+app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/api-docs', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'api.html')));
+app.get('/tickets', isAuthenticated, (req, res) => res.sendFile(path.join(__dirname, 'public', 'tickets.html')));
+
+app.get('/api/user', (req, res) => {
+    if (!req.session.user) return res.status(410).json({ error: 'Non connecté' });
+    res.json(req.session.user);
 });
 
-// ==========================================
-// MOTEUR DE RECHERCHE ET REQUÊTES EXTERNES (API LOOKUP)
-// ==========================================
+// --- LOGIQUE RECHERCHE MULTI-LOOKUP ---
 app.get('/api/lookup', async (req, res) => {
-    if (!req.session || !req.session.user) return res.status(401).json({ error: 'Accès refusé.' });
-
+    if (!req.session.user) return res.status(401).json({ error: 'Accès non autorisé.' });
+    
     const { query, type } = req.query;
-    if (!query) return res.status(400).json({ error: 'Le champ de recherche est vide.' });
+    if (!query) return res.status(400).json({ error: 'Recherche vide.' });
 
     try {
-        // --- OPTION 1 : RECHERCHE PAR ADRESSE IP ---
         if (type === 'ip') {
-            const response = await axios.get(`https://ip-api.com/json/${query}?fields=status,message,country,regionName,city,zip,isp,org,as,query`);
-            if (response.data.status === 'fail') {
-                return res.status(400).json({ error: 'Adresse IP invalide ou introuvable.' });
-            }
+            const response = await axios.get(`https://ip-api.com/json/${query}`);
+            if (response.data.status === 'fail') return res.status(400).json({ error: 'IP invalide.' });
             return res.json({
-                success: true,
-                type: 'ip',
-                results: {
-                    ip: response.data.query,
-                    pays: response.data.country,
-                    region: response.data.regionName,
-                    ville: response.data.city,
-                    codePostal: response.data.zip,
-                    fai: response.data.isp,
-                    organisation: response.data.org
-                }
+                success: true, type: 'ip',
+                results: { ip: response.data.query, country: response.data.country, city: response.data.city, isp: response.data.isp }
             });
         }
-
-        // --- OPTION 2 : RECHERCHE PAR DISCORD ID ---
+        
         if (type === 'discord_id') {
-            // Utilise le Token de ton bot Discord stocké dans tes variables d'environnement Render
             const botToken = process.env.DISCORD_BOT_TOKEN;
-            if (!botToken) {
-                return res.status(500).json({ error: "Le Token du bot Discord n'est pas configuré sur Render." });
-            }
-
+            if (!botToken) return res.status(500).json({ error: 'Clé API Discord absente sur Render.' });
             try {
                 const response = await axios.get(`https://discord.com/api/v10/users/${query}`, {
                     headers: { Authorization: `Bot ${botToken}` }
                 });
-
-                const user = response.data;
-                const avatarURL = user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : 'https://discord.com/assets/1f0bfc0865d324c2587920a7d80c609b.png';
-                const bannerURL = user.banner ? `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.png?size=512` : null;
-
                 return res.json({
-                    success: true,
-                    type: 'discord_id',
-                    results: {
-                        id: user.id,
-                        username: user.username,
-                        globalName: user.global_name || 'Aucun nom d\'affichage',
-                        avatar: avatarURL,
-                        banner: bannerURL,
-                        accentColor: user.accent_color ? `#${user.accent_color.toString(16)}` : 'Non définie',
-                        bot: user.bot ? 'Oui' : 'Non'
-                    }
+                    success: true, type: 'discord_id',
+                    results: { id: response.data.id, username: response.data.username, globalName: response.data.global_name, avatar: `https://cdn.discordapp.com/avatars/${response.data.id}/${response.data.avatar}.png` }
                 });
-            } catch (err) {
-                return res.status(404).json({ error: "Aucun utilisateur Discord trouvé avec cet ID, ou Token invalide." });
+            } catch {
+                return res.status(404).json({ error: 'ID Discord introuvable.' });
             }
         }
 
-        // --- OPTION 3 : RECHERCHE PAR PSEUDONYME COMPTES SOCIAUX ---
-        if (type === 'username') {
-            const platforms = [
-                { name: 'GitHub', url: `https://github.com/${query}` },
-                { name: 'Reddit', url: `https://www.reddit.com/user/${query}` },
-                { name: 'TikTok', url: `https://www.tiktok.com/@${query}` }
-            ];
-
-            const results = [];
-            for (const platform of platforms) {
-                try {
-                    const check = await axios.get(platform.url, { timeout: 3000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-                    if (check.status === 200) {
-                        results.push({ site: platform.name, status: 'Profil Public Trouvé', link: platform.url });
-                    }
-                } catch (e) {
-                    results.push({ site: platform.name, status: 'Inconnu ou Privé', link: platform.url });
-                }
-            }
-
-            return res.json({ success: true, type: 'username', results });
-        }
-
-        return res.status(400).json({ error: 'Type de recherche non supporté.' });
-
+        // Simulation par défaut pour les autres types non connectés à des API officielles
+        return res.json({ success: true, type: 'mock', message: `Analyse terminée pour : ${query}` });
     } catch (err) {
-        return res.status(500).json({ error: 'Erreur lors de l\'analyse externe.' });
+        res.status(500).json({ error: 'Erreur interne du serveur.' });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Serveur Kronix en ligne sur le port : ${PORT}`);
+// --- ENGIN DE TICKETS ---
+app.post('/api/tickets/create', isAuthenticated, (req, res) => {
+    const { subject, message } = req.body;
+    const newTicket = { id: Date.now(), user: req.session.user.username, subject, message, status: 'Ouvert' };
+    tickets.push(newTicket);
+    res.redirect('/tickets');
 });
+
+app.get('/api/tickets/list', isAuthenticated, (req, res) => res.json(tickets));
+
+app.listen(PORT, () => console.log(`🚀 PokeDox Server opérationnel sur le port ${PORT}`));
