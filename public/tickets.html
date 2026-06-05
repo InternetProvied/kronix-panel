@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeDox Searcher | Tickets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#020205] text-slate-300 p-6">
+
+    <div class="w-full max-w-4xl mx-auto flex justify-between items-center bg-slate-950/80 border border-slate-900 px-6 py-3 rounded-xl mb-8">
+        <div class="font-mono text-sm font-bold text-white">POKEDOX SEARCHER</div>
+        <nav class="flex gap-6 text-xs font-mono">
+            <a href="/dashboard" class="hover:text-white transition">Accueil</a>
+            <a href="/api-docs" class="hover:text-white transition">API</a>
+            <a href="/tickets" class="text-white border-b border-purple-500 pb-1">Tickets</a>
+        </nav>
+    </div>
+
+    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-slate-950/60 border border-slate-900 rounded-xl p-5 h-fit">
+            <h2 class="text-sm font-bold text-white mb-4">Créer un nouveau Ticket</h2>
+            <form action="/api/tickets/create" method="POST" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-500 mb-1">Sujet d'assistance</label>
+                    <input type="text" name="subject" required placeholder="ex: Problème clé API UHQ" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
+                </div>
+                <div>
+                    <label class="block text-slate-500 mb-1">Détails du problème</label>
+                    <textarea name="message" required rows="4" placeholder="Décrivez votre situation..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-lg transition">Ouvrir le Ticket</button>
+            </form>
+        </div>
+
+        <div class="md:col-span-2 bg-slate-950/40 border border-slate-900 rounded-xl p-5">
+            <h2 class="text-sm font-bold text-white mb-4">Vos Demandes en cours</h2>
+            <div id="tickets-view" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchTickets() {
+            const res = await fetch('/api/tickets/list');
+            const data = await res.json();
+            const box = document.getElementById('tickets-view');
+            box.innerHTML = data.length === 0 ? `<div class="text-slate-600 text-xs font-mono">Aucun ticket en cours de traitement.</div>` : '';
+            
+            data.forEach(t => {
+                box.innerHTML += `
+                    <div class="border border-slate-900 bg-slate-950 p-4 rounded-xl text-xs font-mono">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-white font-bold">${t.subject}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] bg-purple-950/50 text-purple-400 border border-purple-900">${t.status}</span>
+                        </div>
+                        <p class="text-slate-400 text-[11px] mt-1">${t.message}</p>
+                    </div>`;
+            });
+        }
+        fetchTickets();
+    </script>
+</body>
+</html>
