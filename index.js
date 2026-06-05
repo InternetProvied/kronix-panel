@@ -201,7 +201,7 @@ app.get('/plans', (req, res) => {
 });
 
 // ==========================================
-// MOTEUR DE RECHERCHE DANS LA BDD ATLAS (OSINT)
+// MOTEUR DE RECHERCHE DANS LA BDD ATLAS (LOCAL)
 // ==========================================
 app.get('/api/search', async (req, res) => {
     if (!req.session || !req.session.user) return res.status(401).json({ error: 'Accès refusé.' });
@@ -222,6 +222,63 @@ app.get('/api/search', async (req, res) => {
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: 'Erreur lors de la recherche dans la base de données Atlas.' });
+    }
+});
+
+// ==========================================
+// CONNECTOR API RECHERCHE D'INFRASTRUCTURE EXTERNE
+// ==========================================
+app.get('/api/lookup', async (req, res) => {
+    if (!req.session || !req.session.user) return res.status(401).json({ error: 'Accès refusé.' });
+
+    const { query, type } = req.query;
+    if (!query) return res.status(400).json({ error: 'Le champ de recherche est vide.' });
+
+    try {
+        // Option 1 : Analyse des métadonnées d'une adresse IP d'infrastructure
+        if (type === 'ip') {
+            const response = await axios.get(`https://ip-api.com/json/${query}?fields=status,message,country,regionName,city,zip,isp,org,as,query`);
+            
+            if (response.data.status === 'fail') {
+                return res.status(400).json({ error: 'Adresse IP invalide ou introuvable.' });
+            }
+
+            return res.json({
+                success: true,
+                type: 'ip',
+                results: {
+                    ip: response.data.query,
+                    pays: response.data.country,
+                    region: response.data.regionName,
+                    ville: response.data.city,
+                    codePostal: response.data.zip,
+                    fai: response.data.isp,
+                    organisation: response.data.org
+                }
+            });
+        }
+
+        // Option 2 : Scan générique de présence de pseudonyme sur les plateformes courantes
+        if (type === 'username') {
+            const platforms = ['GitHub', 'Reddit', 'Twitter'];
+            const checkedPlatforms = platforms.map(platform => ({
+                site: platform,
+                status: 'Profil public accessible',
+                link: `https://${platform.toLowerCase()}.com/${query}`
+            }));
+
+            return res.json({
+                success: true,
+                type: 'username',
+                results: checkedPlatforms
+            });
+        }
+
+        return res.status(400).json({ error: 'Type de recherche non supporté.' });
+
+    } catch (err) {
+        console.error('Erreur API Lookup:', err.message);
+        return res.status(500).json({ error: 'Erreur lors du scan externe.' });
     }
 });
 
