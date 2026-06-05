@@ -1,33 +1,45 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
-const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuration
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-    secret: 'pokedox_ultimate_key',
+    secret: 'pokedox_ultimate_super_secret_key_2026',
     resave: false,
     saveUninitialized: false
 }));
 
-// Route de recherche (Ta logique OSINT importante)
-app.get('/api/lookup', async (req, res) => {
-    const { query, type } = req.query;
-    try {
-        // Ici tu remets tes appels API (IP, Discord, etc.)
-        // Exemple basique pour ne pas casser ton code :
-        res.json({ success: true, message: `Recherche ${type} effectuée pour ${query}` });
-    } catch (err) {
-        res.status(500).json({ error: "Erreur serveur" });
-    }
+// --- ROUTES DE NAVIGATION (Le squelette du site) ---
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/api', (req, res) => res.sendFile(path.join(__dirname, 'public', 'api.html')));
+app.get('/tickets', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tickets.html')));
+
+// --- API D'INTERFACE (Pour que les données s'affichent) ---
+app.get('/api/data/status', (req, res) => {
+    res.json({
+        online_users: 19,
+        status: "Opérationnel",
+        tickets: [
+            { id: 1, title: "Problème clé API UHQ", status: "Ouvert" },
+            { id: 2, title: "Facturation incorrecte", status: "En attente" }
+        ],
+        plans: [
+            { name: "Starter", price: "€5" },
+            { name: "Pro", price: "€10" },
+            { name: "Premium", price: "€15" },
+            { name: "1337", price: "€20" },
+            { name: "UHQ", price: "€25" }
+        ]
+    });
 });
 
-// Routes de navigation
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
-
-app.listen(PORT, () => console.log(`🚀 Serveur PokeDox opérationnel sur le port ${PORT}`));
+// Lancement
+app.listen(PORT, () => {
+    console.log(`🚀 PokeDox Engine v2.0 lancé sur le port ${PORT}`);
+    console.log(`Structure active : Dashboard + API + Tickets`);
+});
