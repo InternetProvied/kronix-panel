@@ -3,210 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PokeDox Searcher | Dashboard</title>
+    <title>Kronix - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { background-color: #020205; overflow-x: hidden; margin: 0; }
-        #3d-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-        .canvas-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, #020205 15%, rgba(2,2,5,0.5) 60%, #020205 100%); z-index: 2; }
-        .main-container { position: relative; z-index: 10; }
+        .neon-shadow { box-shadow: 0 0 15px rgba(147, 51, 234, 0.15); }
     </style>
 </head>
-<body class="text-slate-200 antialiased font-sans">
+<body class="bg-[#050508] text-gray-200 min-h-screen font-sans antialiased">
 
-    <div id="3d-container"><div class="canvas-overlay"></div></div>
-
-    <main class="min-h-screen flex flex-col justify-between p-6 main-container">
-        <header class="w-full max-w-6xl mx-auto flex justify-between items-center bg-slate-950/80 border border-slate-900 px-6 py-3 rounded-xl backdrop-blur-md">
-            <div class="flex items-center gap-3 font-mono tracking-widest text-sm font-bold text-white">
-                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span> POKEDOX SEARCHER
-            </div>
-            <nav class="flex gap-6 text-xs font-mono font-medium text-slate-400">
-                <a href="/dashboard" class="text-white border-b border-purple-500 pb-1">Accueil</a>
-                <a href="/api-docs" class="hover:text-white transition">API</a>
-                <a href="/tickets" class="hover:text-white transition">Tickets</a>
-            </nav>
-            <a href="/logout" class="text-xs font-mono bg-red-950/40 text-red-400 border border-red-900 px-3 py-1.5 rounded-lg hover:bg-red-900 hover:text-white transition">Déconnexion</a>
-        </header>
-
-        <section class="w-full max-w-3xl mx-auto bg-slate-950/70 border border-slate-900 rounded-2xl p-6 shadow-2xl backdrop-blur-xl my-auto">
-            <div class="text-center mb-6">
-                <span class="text-[10px] uppercase font-mono font-bold text-purple-400 border border-purple-900/60 bg-purple-950/20 px-2.5 py-1 rounded-full">Plateforme OSINT Unifiée</span>
-                <h1 class="text-lg font-bold text-white mt-3">Recherche Multi-Critères</h1>
-            </div>
-
-            <div class="flex flex-wrap justify-center gap-2 mb-4">
-                <button onclick="setSearchType('discord_id', this)" class="type-btn bg-purple-900/30 border border-purple-500 text-white text-xs font-mono px-4 py-2 rounded-xl transition">Discord ID</button>
-                <button onclick="setSearchType('ip', this)" class="type-btn bg-slate-900/60 border border-slate-800 text-slate-400 text-xs font-mono px-4 py-2 rounded-xl transition">Adresse IP</button>
-                <button onclick="setSearchType('email', this)" class="type-btn bg-slate-900/60 border border-slate-800 text-slate-400 text-xs font-mono px-4 py-2 rounded-xl transition">Email</button>
-                <button onclick="setSearchType('username', this)" class="type-btn bg-slate-900/60 border border-slate-800 text-slate-400 text-xs font-mono px-4 py-2 rounded-xl transition">Username</button>
-            </div>
-            <style>
-    body { background: #020205; margin: 0; padding: 0; color: white; font-family: monospace; }
-    
-    /* Le fond 3D reste au fond */
-    #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-    
-    /* La grille 3 colonnes est au-dessus */
-    .dashboard-grid { 
-        display: grid; 
-        grid-template-columns: 350px 1fr 350px; 
-        gap: 20px; 
-        padding: 40px; 
-        position: relative; 
-        z-index: 10; 
-        height: 100vh; 
-    }
-    
-    /* Tes blocs avec effet "Glass" */
-    .glass { 
-        background: rgba(10, 5, 20, 0.8); 
-        border: 1px solid #332060; 
-        border-radius: 20px; 
-        backdrop-filter: blur(15px); 
-        padding: 25px; 
-    }
-</style>
-
-            <div class="flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2">
-                <input type="text" id="target-input" placeholder="Entrez la cible à analyser..." class="bg-transparent text-sm text-slate-200 w-full focus:outline-none py-1">
-                <input type="hidden" id="current-type" value="discord_id">
-                <button onclick="triggerAnalysis()" class="bg-white text-slate-950 font-bold px-5 py-2 rounded-lg text-xs hover:bg-slate-200 transition">Analyser</button>
-            </div>
-
-            <div class="mt-6 border-t border-slate-900 pt-4">
-                <div class="text-[11px] font-mono text-slate-500 mb-3 flex justify-between">
-                    <span>VÉRIFICATION DES COMPOSANTS</span>
-                    <span id="scan-counter" class="text-purple-400">0/4 Actifs</span>
-                </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div id="ep-1" class="border border-slate-900 bg-slate-950/50 rounded-xl p-3 text-center font-mono text-[11px] text-slate-600">Stealer Logs</div>
-                    <div id="ep-2" class="border border-slate-900 bg-slate-950/50 rounded-xl p-3 text-center font-mono text-[11px] text-slate-600">Bases Locales</div>
-                    <div id="ep-3" class="border border-slate-900 bg-slate-950/50 rounded-xl p-3 text-center font-mono text-[11px] text-slate-600">LeakOSINT</div>
-                    <div id="ep-4" class="border border-slate-900 bg-slate-950/50 rounded-xl p-3 text-center font-mono text-[11px] text-slate-600">Comptes Sociaux</div>
+    <nav class="bg-[#0b0b12]/90 backdrop-blur-md border-b border-purple-950/20 px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <span class="text-2xl font-black font-mono tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600">KRONIX</span>
+                <div class="flex items-center gap-1 text-sm font-medium text-gray-400">
+                    <a href="/dashboard" class="bg-purple-950/30 text-purple-400 px-4 py-2 rounded-xl border border-purple-900/30 transition">Panel</a>
+                    <a href="/ddos" class="hover:text-purple-400 px-4 py-2 transition font-mono">DDOS</a>
+                    <a href="/plans" class="hover:text-purple-400 px-4 py-2 transition font-mono">PLANS</a>
                 </div>
             </div>
+            <a href="/logout" class="bg-red-950/20 border border-red-900/30 text-red-400 px-3 py-2 rounded-xl text-xs font-bold hover:bg-red-900/40 transition">Déconnexion</a>
+        </div>
+    </nav>
 
-            <div id="display-results" class="hidden mt-4 bg-slate-950 border border-slate-900 rounded-xl p-4 font-mono text-xs text-left"></div>
-        </section>
-
-        <footer class="text-center font-mono text-[10px] text-slate-600 w-full">
-            PokeDox Engine • Operational Security Environment
-        </footer>
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <h2 class="text-xl font-bold text-white">Module de Recherche Global</h2>
+        <div class="w-full bg-[#0b0b12]/50 border border-purple-950/20 rounded-2xl p-4 flex gap-3 mt-4 mb-8 neon-shadow">
+            <input type="text" id="search-input" placeholder="Entrez un pseudo, email, IP..." class="flex-1 bg-[#050508] border border-gray-900 rounded-xl py-3 px-4 text-sm text-white">
+            <button onclick="launchSearch()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 rounded-xl text-sm">Rechercher</button>
+        </div>
+        <div id="results-zone" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </main>
 
     <script>
-        let selectedType = 'discord_id';
-        function setSearchType(type, btn) {
-            selectedType = type;
-            document.getElementById('current-type').value = type;
-            document.querySelectorAll('.type-btn').forEach(b => { b.className = "type-btn bg-slate-900/60 border border-slate-800 text-slate-400 text-xs font-mono px-4 py-2 rounded-xl transition"; });
-            btn.className = "type-btn bg-purple-900/30 border border-purple-500 text-white text-xs font-mono px-4 py-2 rounded-xl transition";
+        function launchSearch() {
+            const query = document.getElementById('search-input').value;
+            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const zone = document.getElementById('results-zone');
+                    zone.innerHTML = data.map(item => `
+                        <div class="bg-[#0b0b12] border border-gray-900 p-5 rounded-2xl">
+                            <h3 class="text-white font-bold">${item.username}</h3>
+                            <p class="text-xs text-purple-400 font-mono">${item.status}</p>
+                        </div>`).join('');
+                });
         }
-
-        async function triggerAnalysis() {
-            const query = document.getElementById('target-input').value.trim();
-            const resBox = document.getElementById('display-results');
-            if(!query) return;
-
-            resBox.classList.remove('hidden');
-            resBox.innerHTML = `<div class="text-slate-500 animate-pulse">> Initialisation des protocoles de scan...</div>`;
-
-            // Simulation visuelle séquentielle de la grille (comme sur la capture)
-            for(let i = 1; i <= 4; i++) {
-                await new Promise(r => setTimeout(r, 400));
-                const ep = document.getElementById(`ep-${i}`);
-                ep.className = "border border-purple-900/50 bg-purple-950/10 rounded-xl p-3 text-center font-mono text-[11px] text-purple-400 animate-pulse";
-                document.getElementById('scan-counter').innerText = `${i}/4 Actifs`;
-            }
-
-            try {
-                const response = await fetch(`/api/lookup?query=${encodeURIComponent(query)}&type=${selectedType}`);
-                const data = await response.json();
-                
-                if(!response.ok) {
-                    resBox.innerHTML = `<span class="text-red-400">❌ Erreur : ${data.error}</span>`;
-                    return;
-                }
-
-                if(data.type === 'discord_id') {
-                    resBox.innerHTML = `
-                        <div class="flex items-center gap-3 border-b border-slate-900 pb-3 mb-2">
-                            <img src="${data.results.avatar}" class="w-10 h-10 rounded-full border border-purple-500">
-                            <div>
-                                <div class="text-white font-bold">${data.results.globalName || data.results.username}</div>
-                                <div class="text-slate-500">@${data.results.username}</div>
-                            </div>
-                        </div>
-                        <div>ID Réseau : ${data.results.id}</div>
-                    `;
-                } else if(data.type === 'ip') {
-                    resBox.innerHTML = `
-                        <div class="text-emerald-400 font-bold mb-1">> RECHERCHE IP VALIDE</div>
-                        <div>IP : ${data.results.ip}</div>
-                        <div>Zone : ${data.results.city}, ${data.results.country}</div>
-                        <div>Opérateur : ${data.results.isp}</div>
-                    `;
-                } else {
-                    resBox.innerHTML = `<div class="text-purple-400">> ${data.message}</div>`;
-                }
-            } catch {
-                resBox.innerHTML = `<span class="text-red-400">❌ Erreur de connexion au serveur.</span>`;
-            }
-        }
-
-        // ==========================================
-        // CONFIGURATION DU MOTEUR THREE.JS DE L'IMAGE
-        // ==========================================
-        const container = document.getElementById('3d-container');
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
-        camera.position.set(0, 16, 26);
-        camera.lookAt(0, 1, 0);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        container.appendChild(renderer.domElement);
-
-        scene.add(new THREE.AmbientLight(0x0f0a20, 1.8));
-        const light = new THREE.DirectionalLight(0x6b21a8, 4.0);
-        light.position.set(5, 15, 10);
-        scene.add(light);
-
-        const cubes = [];
-        const rows = 14, cols = 24, spacing = 1.15;
-        const geometry = new THREE.BoxGeometry(0.95, 6, 0.95);
-
-        for (let i = 0; i < rows; i++) {
-            for (let j = 0; j < cols; j++) {
-                const material = new THREE.MeshStandardMaterial({ color: 0x070412, roughness: 0.5 });
-                const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set((j - cols / 2) * spacing, -3.5, (i - rows / 2) * spacing);
-                scene.add(mesh);
-                cubes.push({ mesh, x: j, z: i });
-            }
-        }
-
-        let clock = new THREE.Clock();
-        function runAnimation() {
-            requestAnimationFrame(runAnimation);
-            const time = clock.getElapsedTime();
-            cubes.forEach(c => {
-                const wave = Math.sin(Math.sqrt(Math.pow(c.x - cols/2, 2) + Math.pow(c.z - rows/2, 2)) * 0.3 - time * 1.2);
-                c.mesh.position.y = -3.5 + (wave + 1) * 1.2;
-                const ratio = (wave + 1) / 2;
-                c.mesh.material.color.setRGB(0.04 + ratio * 0.2, 0.02, 0.1 + ratio * 0.4);
-            });
-            renderer.render(scene, camera);
-        }
-        runAnimation();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
