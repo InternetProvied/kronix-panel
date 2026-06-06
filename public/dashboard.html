@@ -4,30 +4,26 @@
     <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-white">
-    <div id="admin-panel" class="hidden border border-red-500 p-4 m-10">
-        <h1 class="text-red-500">PANEL ADMIN</h1>
-        <input id="uid" placeholder="ID BDD" class="text-black">
-        <button onclick="changeRole()" class="bg-red-600 px-2">Promouvoir</button>
+<body class="bg-slate-950 text-white p-10">
+    <div id="admin-panel" class="hidden border border-red-500 p-6">
+        <h2 class="text-red-500 font-bold">ADMIN PANEL</h2>
+        <input id="uid" class="text-black p-1" placeholder="ID MongoDB">
+        <button onclick="update()" class="bg-red-600 px-4 py-2">Promouvoir Admin</button>
     </div>
 
     <script>
-        fetch('/api/user')
-            .then(r => r.json())
-            .then(user => {
-                if (user.role === 'admin') {
-                    document.getElementById('admin-panel').classList.remove('hidden');
-                }
-            });
+        fetch('/api/user').then(r => r.json()).then(user => {
+            if (user.role === 'admin') document.getElementById('admin-panel').classList.remove('hidden');
+        });
 
-        async function changeRole() {
+        async function update() {
             const userId = document.getElementById('uid').value;
             await fetch('/api/admin/update-role', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ userId, newPlan: 'admin' })
             });
-            alert('Mise à jour effectuée');
+            alert('Mise à jour réussie !');
         }
     </script>
 </body>
