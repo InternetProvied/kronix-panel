@@ -26,7 +26,20 @@ app.use(session({
     resave: false,
     saveUninitialized: false
 }));
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    
+    // Exemple de vérification simple
+    if (username === 'Admin' && password === 'admin') {
+        req.session.user = { username: 'Admin', role: 'admin' };
+        return res.redirect('/dashboard');
+    }
+    
+    res.send('Identifiants incorrects. <a href="/">Retour</a>');
+});
 
 // Routes
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
