@@ -1,12 +1,11 @@
-const mongoose = require('mongoose');
-
-const UserSchema = new mongoose.Schema({
-    username: { type: String, required: true },
-    email: { type: String },
-    discordId: { type: String, unique: true, sparse: true },
-    googleId: { type: String, unique: true, sparse: true },
-    avatar: { type: String }, 
-    createdAt: { type: Date, default: Date.now }
-});
-
-module.exports = mongoose.model('User', UserSchema);
+<!DOCTYPE html> 
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Login</title></head>
+<body>
+    <h1>Connexion</h1>
+    <form action="/login" method="POST">
+        <input name="username" placeholder="Pseudo" required>
+        <button type="submit">Connexion</button>
+    </form>
+</body>
+</html>
