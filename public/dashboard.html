@@ -4,10 +4,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white p-10">
-    <div id="admin-panel" class="hidden border border-violet-500 p-6 rounded-lg bg-slate-900 mb-10">
-        <h2 class="text-violet-400 font-black mb-4">PANEL ADMINISTRATEUR</h2>
-        <input id="uid" placeholder="ID MongoDB" class="bg-black border border-violet-500 p-2 text-white">
-        <button onclick="update()" class="bg-violet-600 px-4 py-2 hover:bg-violet-700">Promouvoir Admin</button>
+    <div id="admin-panel" class="hidden border border-violet-500 p-6 rounded-xl bg-slate-900 shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+        <h2 class="text-violet-400 font-bold mb-4">PANEL ADMINISTRATEUR KRONIX</h2>
+        <input id="uid" class="bg-black border border-violet-500 p-2 text-white" placeholder="ID MongoDB">
+        <button onclick="update()" class="bg-violet-600 px-4 py-2 hover:bg-violet-500 transition">Promouvoir Admin</button>
     </div>
 
     <script>
@@ -22,7 +22,7 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ userId, newPlan: 'admin' })
             });
-            alert('Mise à jour réussie !');
+            alert('Rôle mis à jour !');
         }
     </script>
 </body>
