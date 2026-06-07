@@ -1,357 +1,64 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kronix | Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body {
-            background-color: #030712;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-        }
-        .cyber-glow {
-            position: absolute;
-            width: 700px;
-            height: 350px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(76, 29, 149, 0.05) 50%, rgba(0,0,0,0) 100%);
-            filter: blur(60px);
-            pointer-events: none;
-            z-index: 1;
-        }
-        .glow-1 { top: 15%; left: 50%; transform: translate(-50%, -50%); }
-        .glow-2 { top: 70%; left: 50%; transform: translate(-50%, -50%); }
-        .main-container { position: relative; z-index: 10; }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #030712; }
-        ::-webkit-scrollbar-thumb { background: #2e1065; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4c1d95; }
+        body { background: #020205; margin: 0; overflow: hidden; color: white; font-family: monospace; }
+        #canvas-container { position: fixed; top: 0; left: 0; z-index: 0; }
+        .dashboard-grid { display: grid; grid-template-columns: 350px 1fr 350px; gap: 20px; padding: 20px; position: relative; z-index: 10; height: 100vh; align-items: center; }
+        .glass { background: rgba(15, 15, 25, 0.7); border: 1px solid #332060; border-radius: 15px; backdrop-filter: blur(10px); padding: 20px; }
     </style>
 </head>
-<body class="text-violet-200 font-sans antialiased selection:bg-violet-500/30">
-
-    <div class="cyber-glow glow-1"></div>
-    <div class="cyber-glow glow-2"></div>
-
-    <canvas id="canvas-particles" class="fixed top-0 left-0 w-full h-full pointer-events-none" style="z-index: 2;"></canvas>
-
-    <section class="min-h-screen flex flex-col justify-between p-6 main-container">
-        
-        <nav class="w-full max-w-4xl mx-auto bg-slate-950/60 backdrop-blur-xl border border-violet-900/40 rounded-full px-6 py-3 flex justify-between items-center shadow-2xl mt-2">
-            <div class="flex items-center gap-2 font-mono text-xs font-black tracking-widest text-violet-400">
-                <span class="inline-block w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span> KRONIX//PANEL
-            </div>
-            <div class="hidden sm:flex items-center gap-6 text-xs text-violet-300 font-medium font-mono">
-                <a href="/dashboard" class="text-white border-b border-violet-500 pb-0.5">CONSOLE</a>
-                <a href="/ddos" class="hover:text-white transition">STRESSER</a>
-                <a href="/plans" class="hover:text-white transition">SUBS</a>
-                <!-- Onglet ADMIN Rouge Flashy (Caché de base) -->
-                <a id="admin-nav-item" href="#admin-panel" class="hidden text-rose-500 font-bold border border-rose-500/30 px-3 py-1 rounded-full bg-rose-950/20 hover:bg-rose-900/40 transition animate-pulse">⚙️ ADMIN</a>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2 bg-slate-900/80 border border-violet-900/30 py-1 px-3 rounded-full">
-                    <img id="user-avatar" src="" alt="Avatar" class="w-4 h-4 rounded-full border border-violet-500 hidden">
-                    <span id="user-nav-name" class="text-[11px] font-mono font-medium text-violet-300">Loading...</span>
-                </div>
-                <a href="/logout" class="text-violet-500 hover:text-rose-400 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 01-3-3h4a3 3 0 013 3v1"></path></svg>
-                </a>
-            </div>
-        </nav>
-
-        <!-- PANNEAU ADMINISTRATEUR GESTION DES ROLES (Affiché uniquement si admin) -->
-        <div id="admin-panel" class="hidden w-full max-w-3xl mx-auto bg-slate-950/60 backdrop-blur-xl border-2 border-rose-600/50 rounded-2xl p-6 text-left shadow-2xl mt-8">
-            <div class="flex items-center justify-between border-b border-rose-950 pb-3 mb-4">
-                <h2 class="text-lg font-mono font-black text-rose-500 flex items-center gap-2 tracking-wide">
-                    <span class="w-2 h-2 bg-rose-500 rounded-full"></span> KRONIX CONTROL CENTER // ACTIONS REQUISES
-                </h2>
-                <span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded font-mono font-bold">ACCÈS ROOT</span>
-            </div>
-            <p class="text-xs text-slate-400 mb-4 font-mono">> Assigner un plan ou modifier les permissions d'accès d'un utilisateur :</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input type="text" id="admin-user-id" placeholder="ID de la base de données MongoDB..." class="md:col-span-1 bg-slate-900/90 border border-rose-950 focus:border-rose-500 text-sm p-3 rounded-xl focus:outline-none text-slate-300 font-mono placeholder-slate-700">
-                
-                <select id="admin-role-select" class="bg-slate-900/90 border border-rose-950 focus:border-rose-500 text-sm p-3 rounded-xl focus:outline-none text-slate-300 font-mono cursor-pointer">
-                    <option value="Starter">Plan : Starter</option>
-                    <option value="Pro">Plan : Pro</option>
-                    <option value="Premium">Plan : Premium</option>
-                    <option value="1337">Plan : 1337</option>
-                    <option value="UHQ">Plan : UHQ</option>
-                    <option value="admin">Rang : Administrateur</option>
-                </select>
-
-                <button onclick="updateUserRole()" class="bg-rose-950/40 hover:bg-rose-900 border border-rose-600 text-rose-200 font-mono font-bold px-4 py-3 rounded-xl text-xs transition uppercase tracking-wider">
-                    Sauvegarder les droits
-                </button>
-            </div>
-            <div id="admin-status-message" class="mt-3 text-[11px] font-mono hidden"></div>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="dashboard-grid">
+        <!-- Colonne Gauche : API -->
+        <div class="glass h-[500px]">
+            <h2 class="font-bold text-purple-400 mb-4">API / SUBSCRIPTIONS</h2>
+            <!-- Ajouter ici les cartes des abonnements -->
         </div>
 
-        <div class="flex flex-col items-center justify-center my-auto relative pt-12">
-            <div class="w-full max-w-3xl bg-slate-950/40 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 text-left shadow-2xl">
-                <h2 class="text-xl font-bold text-white font-sans flex items-center gap-2">
-                    Bienvenue sur le panel, <span id="user-welcome-name" class="text-violet-400">Admin</span> 👋
-                </h2>
-                <p class="text-xs text-slate-400 leading-relaxed border-b border-violet-950 pb-4 mb-4 mt-2">
-                    Connexion réussie. Voici l'interface principale de ton projet Kronix. Toutes tes données de session sont actuellement synchronisées en temps réel.
-                </p>
-                <div class="flex gap-6 text-xs font-mono text-slate-500">
-                    <div>ID BDD: <span id="user-id" class="text-slate-400">...</span></div>
-                    <div>Email: <span id="user-email" class="text-slate-400">...</span></div>
-                </div>
+        <!-- Colonne Centre : Logo + Recherche -->
+        <div class="flex flex-col items-center gap-6">
+            <div class="text-3xl font-black text-white">PokeDox</div>
+            <div class="glass w-full">
+                <input type="text" placeholder="Enter a Discord ID..." class="w-full bg-black border border-slate-700 p-3 rounded">
             </div>
         </div>
 
-        <div class="w-full max-w-3xl mx-auto bg-slate-950/20 backdrop-blur-xl border border-violet-950 rounded-2xl p-6 shadow-2xl mb-6">
-            <div class="flex items-center gap-3 bg-slate-950/80 border border-violet-900/40 rounded-xl px-4 py-2 mb-3 focus-within:border-violet-600 transition">
-                <svg class="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                <input type="text" id="search-input" placeholder="Swayziix" class="bg-transparent text-sm text-slate-300 w-full focus:outline-none placeholder-slate-700">
-                <button onclick="performSearch()" class="bg-violet-950/60 hover:bg-violet-900 border border-violet-700 text-white font-medium px-6 py-2 rounded-xl text-xs transition flex items-center gap-2">
-                    Exécuter <span>→</span>
-                </button>
-            </div>
-
-            <div id="search-results" class="hidden mt-4 border-t border-violet-950 pt-4 text-xs">
-                <div class="flex items-center justify-between text-slate-500 mb-3 font-mono">
-                    <span>RÉSULTAT DE LA RECHERCHE</span>
-                    <span id="results-count" class="text-violet-400">0 trouvé</span>
-                </div>
-                <div id="results-container" class="space-y-3 max-h-64 overflow-y-auto pr-2"></div>
-            </div>
-
-            <div class="flex justify-between items-center text-[11px] text-slate-500 font-mono mt-3">
-                <div class="flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Base de données MongoDB Atlas connectée
-                </div>
-                <div class="text-violet-400 font-bold uppercase tracking-wider">STATUT DU SERVEUR : EN LIGNE</div>
-            </div>
+        <!-- Colonne Droite : Tickets -->
+        <div class="glass h-[500px]">
+            <h2 class="font-bold text-purple-400 mb-4">TICKETS / SUPPORT</h2>
         </div>
-    </section>
-
-    <section class="py-12 px-6 max-w-4xl mx-auto main-container">
-        <div class="bg-slate-950/40 border border-violet-950 p-6 rounded-2xl shadow-2xl">
-            <h3 class="text-sm font-bold text-violet-400 uppercase font-mono mb-4">> Trafic Réseau & Requêtes</h3>
-            <div class="h-48">
-                <canvas id="neonChart"></canvas>
-            </div>
-        </div>
-    </section>
+    </div>
 
     <script>
-        // 1. Gestion de la session utilisateur + Vérification Admin
-        async function loadUser() {
-            try {
-                const response = await fetch('/api/user');
-                if (!response.ok) return window.location.href = '/';
-                const user = await response.json();
-                
-                if (user) {
-                    document.getElementById('user-nav-name').innerText = user.username;
-                    document.getElementById('user-welcome-name').innerText = user.username;
-                    document.getElementById('user-id').innerText = user._id;
-                    document.getElementById('user-email').innerText = user.email || 'N/A';
-                    
-                    if (user.avatar) {
-                        const avatarImg = document.getElementById('user-avatar');
-                        avatarImg.src = user.avatar;
-                        avatarImg.classList.remove('hidden');
-                    }
+        // Moteur 3D Three.js pour le fond (Pistons)
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-                    // CONDITION DE SECURITE VISUELLE : Si tu es admin, on affiche les options rouges !
-                    if (user.role === 'admin') {
-                        document.getElementById('admin-nav-item').classList.remove('hidden');
-                        document.getElementById('admin-panel').classList.remove('hidden');
-                    }
-                }
-            } catch (err) { window.location.href = '/'; }
+        // Ajout des cubes (Pistons)
+        const geometry = new THREE.BoxGeometry(1, 5, 1);
+        for(let i=0; i<400; i++) {
+            const material = new THREE.MeshBasicMaterial({ color: 0x2e1065 });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set((i%20)*2 - 20, -2, Math.floor(i/20)*2 - 20);
+            scene.add(cube);
         }
-        loadUser();
+        camera.position.z = 20;
+        camera.position.y = 10;
+        camera.rotation.x = -0.5;
 
-        // FONCTION ADMIN : Envoi des modifications de droits au serveur
-        async function updateUserRole() {
-            const userId = document.getElementById('admin-user-id').value.trim();
-            const newPlan = document.getElementById('admin-role-select').value;
-            const msgBox = document.getElementById('admin-status-message');
-
-            if(!userId) {
-                msgBox.className = "mt-3 text-[11px] font-mono text-rose-500";
-                msgBox.innerText = "[ERREUR] Tu dois spécifier un ID utilisateur.";
-                msgBox.classList.remove('hidden');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/admin/update-role', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, newPlan })
-                });
-                const result = await response.json();
-
-                if(result.success) {
-                    msgBox.className = "mt-3 text-[11px] font-mono text-emerald-400";
-                    msgBox.innerText = `[SUCCESS] ${result.message}`;
-                } else {
-                    msgBox.className = "mt-3 text-[11px] font-mono text-rose-500";
-                    msgBox.innerText = `[ERREUR] ${result.message}`;
-                }
-                msgBox.classList.remove('hidden');
-            } catch (error) {
-                msgBox.className = "mt-3 text-[11px] font-mono text-rose-500";
-                msgBox.innerText = "[ERREUR] Impossible de contacter l'API Kronix.";
-                msgBox.classList.remove('hidden');
-            }
-        }
-
-        // 2. Correction du moteur de recherche pour afficher les cibles
-        async function performSearch() {
-            const query = document.getElementById('search-input').value.trim();
-            const resultsSection = document.getElementById('search-results');
-            const resultsContainer = document.getElementById('results-container');
-            const resultsCount = document.getElementById('results-count');
-
-            if (!query) return;
-
-            resultsSection.classList.remove('hidden');
-            resultsContainer.innerHTML = `<div class="text-slate-500 animate-pulse font-mono">> Recherche dans la base de données...</div>`;
-
-            try {
-                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-
-                resultsContainer.innerHTML = '';
-
-                if (!data || data.length === 0) {
-                    resultsCount.innerText = "0 trouvé";
-                    resultsCount.className = "text-rose-500";
-                    resultsContainer.innerHTML = `<div class="text-slate-500 bg-violet-950/10 border border-violet-900/20 rounded-xl p-4 font-mono">Aucun résultat trouvé pour la cible "${query}".</div>`;
-                    return;
-                }
-
-                resultsCount.innerText = `${data.length} trouvé(s)`;
-                resultsCount.className = "text-violet-400 font-bold";
-
-                data.forEach(target => {
-                    const card = document.createElement('div');
-                    card.className = "bg-slate-950/60 border border-violet-950 rounded-xl p-4 text-slate-400 space-y-1 relative text-left";
-                    
-                    card.innerHTML = `
-                        <div class="text-violet-300 font-bold text-sm mb-2">${target.username || 'N/A'}</div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
-                            <div><span class="text-violet-600">ID BDD :</span> ${target._id || 'N/A'}</div>
-                            <div><span class="text-violet-600">DISCORD ID :</span> ${target.discordId || 'N/A'}</div>
-                            <div><span class="text-violet-600">EMAIL :</span> <span class="text-slate-300">${target.email || 'N/A'}</span></div>
-                            <div><span class="text-violet-600">ADRESSE IP :</span> <span class="text-slate-300">${target.ipAddress || 'N/A'}</span></div>
-                            <div><span class="text-violet-600">STATUT :</span> <span class="text-violet-400">${target.status || 'Actif'}</span></div>
-                        </div>
-                    `;
-                    resultsContainer.appendChild(card);
-                });
-
-            } catch (error) {
-                resultsCount.innerText = "Erreur API";
-                resultsCount.className = "text-rose-500";
-                resultsContainer.innerHTML = `<div class="text-rose-400 font-mono">Erreur de liaison avec le serveur Kronix.</div>`;
-            }
-        }
-
-        document.getElementById('search-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') performSearch();
-        });
-
-        // 3. Ton graphique Chart.js violet d'origine
-        const ctxChart = document.getElementById('neonChart').getContext('2d');
-        const gradientLine = ctxChart.createLinearGradient(0, 0, 0, 150);
-        gradientLine.addColorStop(0, 'rgba(139, 92, 246, 0.2)');
-        gradientLine.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-        new Chart(ctxChart, {
-            type: 'line',
-            data: {
-                labels: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-                datasets: [{
-                    label: 'Requêtes',
-                    data: [40, 55, 45, 70, 50, 110, 65],
-                    borderColor: '#8b5cf6',
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#a78bfa',
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: gradientLine
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: '#6d28d9', font: { size: 9, family: 'monospace' } } },
-                    y: { grid: { color: 'rgba(109, 40, 217, 0.1)' }, ticks: { color: '#6d28d9', font: { size: 9, family: 'monospace' } } }
-                }
-            }
-        });
-
-        // 4. Ton script de particules fluides réactives à la souris
-        const canvas = document.getElementById('canvas-particles');
-        const ctx = canvas.getContext('2d');
-        let particlesArray = [];
-        const mouse = { x: null, y: null, radius: 100 };
-
-        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-        window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
-
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize);
-        resize();
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 1.5 + 1;
-                this.baseX = this.x; this.baseY = this.y;
-                this.vx = (Math.random() - 0.5) * 0.3;
-                this.vy = (Math.random() - 0.5) * 0.3;
-                this.density = (Math.random() * 10) + 10;
-            }
-            draw() {
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(167, 139, 250, 0.2)'; ctx.fill();
-            }
-            update() {
-                this.baseX += this.vx; this.baseY += this.vy;
-                if (this.baseX < 0 || this.baseX > canvas.width) this.vx = -this.vx;
-                if (this.baseY < 0 || this.baseY > canvas.height) this.vy = -this.vy;
-                
-                let dx = mouse.x - this.x; let dy = mouse.y - this.y;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-                if (mouse.x !== null && distance < mouse.radius) {
-                    let force = (mouse.radius - distance) / mouse.radius;
-                    this.x += (dx / distance) * force * this.density * 0.2;
-                    this.y += (dy / distance) * force * this.density * 0.2;
-                } else {
-                    this.x += (this.baseX - this.x) / 10;
-                    this.y += (this.baseY - this.y) / 10;
-                }
-            }
-        }
-        function init() {
-            particlesArray = [];
-            for (let i = 0; i < 50; i++) particlesArray.push(new Particle());
-        }
         function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < particlesArray.length; i++) {
-                particlesArray[i].update(); particlesArray[i].draw();
-            }
             requestAnimationFrame(animate);
+            renderer.render(scene, camera);
         }
-        init(); animate();
+        animate();
     </script>
 </body>
 </html>
