@@ -4,7 +4,7 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 
-export const founderRoleId = process.env.FOUNDER_ROLE_ID || "1474852405601505394";
+export const founderRoleId = process.env.FOUNDER_ROLE_ID || "1521260392653783284";
 
 export function hasFounderAccess(member: GuildMember | null | undefined): boolean {
   if (!member?.roles?.cache) return false;
