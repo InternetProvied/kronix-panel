@@ -11,6 +11,21 @@ import {
 import { dmCommand } from "./dm.js";
 import { locknameCommand, unlocknameCommand } from "./lockname.js";
 import { messageCommand } from "./message.js";
+import {
+  pingCommand,
+  diceCommand,
+  coinCommand,
+  jokeCommand,
+  eightballCommand,
+  userInfoCommand,
+} from "./fun.js";
+import {
+  muteCommand,
+  unmuteCommand,
+  warnCommand,
+  clearCommand,
+  slowmodeCommand,
+} from "./moderation.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
 export interface BotCommand {
@@ -30,6 +45,19 @@ export const commands: BotCommand[] = [
   locknameCommand,
   unlocknameCommand,
   messageCommand,
+  // Fun commands
+  pingCommand,
+  diceCommand,
+  coinCommand,
+  jokeCommand,
+  eightballCommand,
+  userInfoCommand,
+  // Moderation commands
+  muteCommand,
+  unmuteCommand,
+  warnCommand,
+  clearCommand,
+  slowmodeCommand,
 ];
 
 export const commandMap = new Collection<string, BotCommand>(

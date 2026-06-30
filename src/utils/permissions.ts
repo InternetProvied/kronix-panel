@@ -5,6 +5,10 @@ import {
 } from "discord.js";
 
 export const founderRoleId = process.env.FOUNDER_ROLE_ID || "1521260392653783284";
+export const memberRoleIds = [
+  process.env.FOUNDER_ROLE_ID || "1521260392653783284",
+  process.env.MEMBER_ROLE_ID || "1521260413650473010",
+];
 
 export function hasFounderAccess(member: GuildMember | null | undefined): boolean {
   if (!member?.roles?.cache) return false;
@@ -17,6 +21,17 @@ export function hasFounderAccess(member: GuildMember | null | undefined): boolea
     const normalizedName = role.name.toLowerCase();
     return normalizedName === "fondateur" || normalizedName === "founder";
   });
+}
+
+export function hasMemberAccess(member: GuildMember | null | undefined): boolean {
+  if (!member?.roles?.cache) return false;
+
+  return memberRoleIds.some((roleId) => member.roles.cache.has(roleId)) ||
+    member.roles.cache.some((role) => {
+      const normalizedName = role.name.toLowerCase();
+      return normalizedName === "fondateur" || normalizedName === "founder" ||
+             normalizedName === "member" || normalizedName === "membre";
+    });
 }
 
 export function isCrown(interaction: ChatInputCommandInteraction): boolean {
@@ -53,6 +68,40 @@ export async function requireCrown(
   const reply = {
     content:
       "❌ Tu n’as pas le rôle fondateur, tu ne peux pas utiliser cette commande.",
+    ephemeral: true,
+  };
+
+  if (interaction.replied || interaction.deferred) {
+    await interaction.followUp(reply).catch(() => {});
+  } else {
+    await interaction.reply(reply).catch(() => {});
+  }
+
+  return false;
+}
+
+export async function requireMemberAccess(
+  interaction: ChatInputCommandInteraction
+): Promise<boolean> {
+  const guild = interaction.guild;
+  if (!guild) {
+    await interaction.reply({
+      content: "❌ Cette commande ne peut être utilisée que sur un serveur.",
+      ephemeral: true,
+    });
+    return false;
+  }
+
+  const member = interaction.member;
+  const hasAccess =
+    (member && "roles" in member && hasMemberAccess(member as GuildMember)) ||
+    interaction.user.id === guild.ownerId;
+
+  if (hasAccess) return true;
+
+  const reply = {
+    content:
+      "❌ Tu n'as pas les permissions nécessaires pour utiliser cette commande.",
     ephemeral: true,
   };
 
