@@ -1,0 +1,25 @@
+{
+  "name": "discord-admin-bot",
+  "version": "1.0.0",
+  "description": "Bot Discord admin réservé au propriétaire du serveur",
+  "main": "dist/index.js",
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "deploy-commands": "node dist/deploy-commands.js",
+    "setup": "npm run build && npm run deploy-commands"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
